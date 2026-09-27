@@ -213,7 +213,7 @@ func run() -> void:
     air_move.position = center + Vector2(55, 0)
     air_move.pressed = true
     root.push_input(air_move, true)
-    for i in range(10):
+    for i in range(12):
         await physics_frame
     var air_displacement: Vector3 = player.position - air_start
     air_displacement.y = 0.0

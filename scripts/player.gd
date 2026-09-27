@@ -98,7 +98,7 @@ func _physics_process(delta):
     else:
         qi = minf(max_qi, qi + 10.0 * delta)
     var was_airborne := not is_on_floor()
-    var previous_yaw := $Mesh.rotation.y
+    var previous_yaw: float = $Mesh.rotation.y
     if dodge_time > 0.0:
         velocity.x = dodge_direction.x * dodge_speed
         velocity.z = dodge_direction.z * dodge_speed
