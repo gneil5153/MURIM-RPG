@@ -21,7 +21,8 @@ func _physics_process(delta):
     var input := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
     var forward := -camera_pivot.global_transform.basis.z; forward.y = 0; forward = forward.normalized()
     var right := camera_pivot.global_transform.basis.x; right.y = 0; right = right.normalized()
-    var dir := (right * input.x + forward * input.y).normalized()
+    # Input.get_vector returns negative Y for the "move_forward" action.
+    var dir := (right * input.x - forward * input.y).normalized()
     if Input.is_action_just_pressed("dodge") and qi >= 15.0:
         qi -= 15.0; dodge_time = 0.22
     if Input.is_action_just_pressed("attack"): attack()
