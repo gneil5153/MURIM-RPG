@@ -1,6 +1,6 @@
 # Murim: Sendero del Qi
 
-A small Android action RPG prototype built in Godot 4.4. The current build uses a top-down 2D pixel-art style.
+A small Android action RPG prototype built in Godot 4.4. The current build uses a top-down 2D pixel-art style. Legacy 3D prototype files are excluded from the Android package.
 
 ## Controls
 - Drag the left virtual stick to walk; push it toward the edge to run.
