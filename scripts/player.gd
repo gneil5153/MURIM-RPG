@@ -1,190 +1,187 @@
-extends CharacterBody3D
+extends CharacterBody2D
 
-@export var speed := 7.0
-@export var sprint_speed := 10.5
-@export var acceleration := 34.0
-@export var braking := 42.0
-@export var air_control := 12.0
-@export var turn_rate := 13.0
-@export var dodge_speed := 16.0
+@export var walk_speed := 205.0
+@export var run_speed := 325.0
+@export var acceleration := 1450.0
+@export var braking := 1750.0
 @export var max_qi := 100.0
-@export var attack_range := 2.6
-@export var attack_damage := 20.0
 var touch_move := Vector2.ZERO
 var touch_sprinting := false
-var stick_active := false
-var stick_world_direction := Vector3.FORWARD
-var dodge_lean := Vector3.ZERO
 var qi := 100.0
+var facing := Vector2.DOWN
+var dodge_direction := Vector2.ZERO
 var dodge_time := 0.0
-var attack_cooldown := 0.0
-var combo_step := 0
-var facing := Vector3.FORWARD
-var dodge_direction := Vector3.FORWARD
 var dodge_cooldown := 0.0
-var jump_buffer := 0.0
-var coyote_time := 0.0
-var jump_hold_time := 0.0
-var jump_held := false
+var attack_cooldown := 0.0
 var attack_anim := 0.0
+var combo_step := 0
+var jump_buffer := 0.0
+var jump_held := false
+var jump_anim := 0.0
 var landing_impact := 0.0
 var turn_lean := 0.0
-var checkpoint_position := Vector3.ZERO
-@export var jump_velocity := 8.0
-var attack_visual: Node3D
-var attack_tween: Tween
-@onready var camera_pivot: Node3D = $CameraPivot
+var dodge_lean := Vector2.ZERO
+var checkpoint_position := Vector2.ZERO
+var attack_visual: Node2D
+@onready var camera: Camera2D = $Camera2D
+@onready var sprite: AnimatedSprite2D = $Sprite
 
-func _ready():
+func _ready() -> void:
     qi = max_qi
     checkpoint_position = global_position
-    attack_visual = Node3D.new()
+    _setup_animations()
+    attack_visual = Node2D.new()
+    attack_visual.name = "Slash"
+    attack_visual.z_index = 4
+    attack_visual.set_script(load("res://scripts/slash_effect.gd"))
     add_child(attack_visual)
-    var fist := MeshInstance3D.new()
-    var shape := BoxMesh.new()
-    shape.size = Vector3(0.38, 0.38, 1.15)
-    fist.mesh = shape
-    attack_visual.position = Vector3(0.0, 1.2, -0.85)
-    fist.position = Vector3(0.35, 0.05, -0.55)
-    var material := StandardMaterial3D.new()
-    material.albedo_color = Color(1.0, 0.75, 0.25)
-    material.emission_enabled = true
-    material.emission = Color(0.7, 0.35, 0.05)
-    fist.material_override = material
-    attack_visual.add_child(fist)
     attack_visual.visible = false
 
-func _physics_process(delta):
-    if global_position.y < -6.0:
+func _physics_process(delta: float) -> void:
+    if global_position.length() > 620.0:
         global_position = checkpoint_position
-        velocity = Vector3.ZERO
+        velocity = Vector2.ZERO
         dodge_time = 0.0
     dodge_cooldown = maxf(0.0, dodge_cooldown - delta)
     attack_cooldown = maxf(0.0, attack_cooldown - delta)
-    var input := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
-    if touch_move.length() > 0.12:
-        input = touch_move
-    var forward := -camera_pivot.global_transform.basis.z; forward.y = 0; forward = forward.normalized()
-    var right := camera_pivot.global_transform.basis.x; right.y = 0; right = right.normalized()
-    # Input.get_vector returns negative Y for the "move_forward" action.
-    var input_strength := clampf(input.length(), 0.0, 1.0)
-    var dir := (right * input.x - forward * input.y).normalized() if input_strength > 0.01 else Vector3.ZERO
-    if is_on_floor():
-        coyote_time = 0.12
-    else:
-        coyote_time = maxf(0.0, coyote_time - delta)
-    if Input.is_action_just_pressed("dodge"): dodge()
-    if Input.is_action_just_pressed("attack"): attack()
+    attack_anim = maxf(0.0, attack_anim - delta * 3.0)
+    jump_buffer = maxf(0.0, jump_buffer - delta)
+    jump_anim = maxf(0.0, jump_anim - delta)
+    landing_impact = maxf(0.0, landing_impact - delta * 3.0)
+    if Input.is_action_just_pressed("attack"):
+        attack()
+    if Input.is_action_just_pressed("dodge"):
+        dodge()
     if Input.is_action_just_pressed("jump"):
         jump()
-        jump_held = true
     if Input.is_action_just_released("jump"):
         jump_released()
-    jump_buffer = maxf(0.0, jump_buffer - delta)
-    attack_anim = maxf(0.0, attack_anim - delta * 4.0)
-    landing_impact = maxf(0.0, landing_impact - delta * 3.0)
-    if jump_buffer > 0.0 and (is_on_floor() or coyote_time > 0.0):
-        velocity.y = jump_velocity
-        jump_buffer = 0.0
-        coyote_time = 0.0
-        jump_hold_time = 0.0
-    var sprint_button := Input.is_action_pressed("sprint") and qi > 1.0
-    var stick_run := touch_move.length() > 0.12 and qi > 1.0
-    var run_blend := clampf(inverse_lerp(0.58, 1.0, input_strength), 0.0, 1.0) if stick_run else (1.0 if sprint_button else 0.0)
-    var base_speed := lerpf(speed, sprint_speed, run_blend) * input_strength
-    var running := run_blend > 0.05 and input_strength > 0.12
-    if running:
-        qi = maxf(0.0, qi - lerpf(4.0, 8.0, run_blend) * delta)
+
+    var input := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
+    if touch_move.length() > 0.08:
+        input = touch_move
+    var strength := minf(1.0, input.length())
+    if strength > 0.08:
+        facing = input.normalized()
+    var sprinting := (touch_sprinting or Input.is_action_pressed("sprint")) and qi > 0.0 and strength > 0.1
+    var target_speed := run_speed if sprinting else walk_speed
+    if sprinting:
+        qi = maxf(0.0, qi - 7.0 * delta)
     else:
-        qi = minf(max_qi, qi + 10.0 * delta)
-    var was_airborne := not is_on_floor()
-    var previous_yaw: float = $Mesh.rotation.y
+        qi = minf(max_qi, qi + 11.0 * delta)
     if dodge_time > 0.0:
-        velocity.x = dodge_direction.x * dodge_speed
-        velocity.z = dodge_direction.z * dodge_speed
-        var local_dodge: Vector3 = Basis(Vector3.UP, $Mesh.rotation.y).inverse() * dodge_direction
-        dodge_lean = Vector3(clampf(local_dodge.z * 0.32, -0.32, 0.32), 0.0, clampf(-local_dodge.x * 0.3, -0.3, 0.3))
+        velocity = dodge_direction * 650.0
         dodge_time = maxf(0.0, dodge_time - delta)
+        dodge_lean = dodge_direction
     else:
-        dodge_lean = Vector3.ZERO
-        var horizontal := Vector3(velocity.x, 0.0, velocity.z)
-        if dir.length_squared() > 0.0:
-            var control := acceleration if not was_airborne else air_control
-            var lateral := horizontal - dir * horizontal.dot(dir)
-            horizontal -= lateral * minf(1.0, (14.0 if not was_airborne else 2.2) * delta)
-            var target := dir * base_speed
-            horizontal = horizontal.move_toward(target, control * delta)
-        else:
-            horizontal = horizontal.move_toward(Vector3.ZERO, (braking if not was_airborne else air_control * 0.6) * delta)
-        velocity.x = horizontal.x
-        velocity.z = horizontal.z
-    # Keep camera yaw independent of the moving body.
-    if dir.length_squared() > 0.0 and dodge_time <= 0.0:
-        var target_yaw := atan2(-dir.x, -dir.z)
-        $Mesh.rotation.y = rotate_toward($Mesh.rotation.y, target_yaw, turn_rate * delta)
-        facing = Vector3(-sin($Mesh.rotation.y), 0.0, -cos($Mesh.rotation.y))
-    turn_lean = clampf(wrapf($Mesh.rotation.y - previous_yaw, -PI, PI) * -1.8, -0.34, 0.34)
-    if not is_on_floor():
-        if jump_held and velocity.y > 0.0 and jump_hold_time < 0.16:
-            jump_hold_time += delta
-            velocity.y -= 9.0 * delta
-        else:
-            velocity.y -= 24.0 * delta
+        dodge_lean = Vector2.ZERO
+        var target_velocity := input.normalized() * target_speed * strength if strength > 0.08 else Vector2.ZERO
+        var rate := acceleration if strength > 0.08 else braking
+        velocity = velocity.move_toward(target_velocity, rate * delta)
     move_and_slide()
-    if was_airborne and is_on_floor():
-        landing_impact = 1.0
-        jump_held = false
-    if is_on_floor() and global_position.y > -1.0:
-        checkpoint_position = global_position
+    if jump_anim <= 0.0 and sprite.position.y < -1.0:
+        landing_impact = 0.35
+    _update_animation()
 
-func attack():
-    if attack_cooldown > 0.0: return
-    attack_cooldown = 0.32
-    combo_step = (combo_step % 3) + 1
-    attack_anim = 1.0
-    attack_visual.visible = true
-    attack_visual.rotation.y = atan2(-facing.x, -facing.z) - 0.65
-    if attack_tween:
-        attack_tween.kill()
-    attack_tween = create_tween()
-    attack_tween.tween_property(attack_visual, "rotation:y", attack_visual.rotation.y + 1.3, 0.22)
-    attack_tween.tween_callback(func(): attack_visual.visible = false)
-    for body in get_tree().get_nodes_in_group("damageable"):
-        var offset: Vector3 = body.global_position - global_position
-        offset.y = 0.0
-        if offset.length() <= attack_range and (offset.length() < 0.1 or facing.dot(offset.normalized()) >= 0.35):
-            body.take_damage(attack_damage + (combo_step - 1) * 5.0)
+func set_move_vector(value: Vector2) -> void:
+    touch_move = value.limit_length(1.0)
 
-func set_move_vector(v: Vector2) -> void:
-    touch_move = v.limit_length(1.0)
-    stick_active = touch_move.length() >= 0.12
-    if not stick_active:
-        touch_move = Vector2.ZERO
+func attack() -> void:
+    if attack_cooldown > 0.0:
         return
-    var forward := -camera_pivot.global_transform.basis.z
-    forward.y = 0.0
-    forward = forward.normalized()
-    var right := camera_pivot.global_transform.basis.x
-    right.y = 0.0
-    right = right.normalized()
-    stick_world_direction = (right * touch_move.x - forward * touch_move.y).normalized()
-    facing = stick_world_direction
+    attack_cooldown = 0.34
+    attack_anim = 0.8
+    combo_step = (combo_step + 1) % 3
+    _show_slash()
+    var best: Node2D
+    var best_distance := 92.0
+    for candidate in get_tree().get_nodes_in_group("damageable"):
+        if not candidate is Node2D:
+            continue
+        var offset: Vector2 = candidate.global_position - global_position
+        var distance := offset.length()
+        if distance <= best_distance and (distance < 1.0 or facing.dot(offset.normalized()) > 0.15):
+            best = candidate
+            best_distance = distance
+    if best and best.has_method("take_damage"):
+        best.take_damage(20.0 + float(combo_step) * 5.0)
+
+func _show_slash() -> void:
+    attack_visual.rotation = facing.angle() + PI * 0.5
+    attack_visual.visible = true
+    attack_visual.call("restart")
+
+func dodge() -> void:
+    if dodge_cooldown > 0.0 or qi < 12.0:
+        return
+    qi -= 12.0
+    dodge_cooldown = 0.62
+    dodge_time = 0.22
+    dodge_direction = touch_move.normalized() if touch_move.length() > 0.12 else -facing
 
 func jump() -> void:
-    jump_buffer = 0.15
+    if jump_anim > 0.05:
+        return
+    jump_anim = 0.48
+    jump_buffer = 0.16
     jump_held = true
 
 func jump_released() -> void:
     jump_held = false
-    if velocity.y > jump_velocity * 0.48:
-        velocity.y = jump_velocity * 0.48
 
-func dodge() -> void:
-    if qi >= 15.0 and dodge_cooldown <= 0.0:
-        qi -= 15.0
-        dodge_time = 0.22
-        dodge_cooldown = 0.55
-        var body_forward: Vector3 = -$Mesh.global_transform.basis.z
-        body_forward.y = 0.0
-        body_forward = body_forward.normalized()
-        dodge_direction = stick_world_direction if stick_active else -body_forward
+func _setup_animations() -> void:
+    var sheet: Texture2D = load("res://assets/pixel/hero_sheet.png")
+    var frames := SpriteFrames.new()
+    frames.clear_all()
+    var names := ["idle", "walk", "attack", "dodge", "jump"]
+    var dirs := ["down", "up", "right", "left"]
+    for row in range(dirs.size()):
+        for ai in range(names.size()):
+            var animation_name := names[ai] + "_" + dirs[row]
+            frames.add_animation(animation_name)
+            frames.set_animation_speed(animation_name, 9.0 if names[ai] == "walk" else 12.0)
+            frames.set_animation_loop(animation_name, names[ai] in ["idle", "walk"])
+            for frame_index in range(4):
+                var atlas := AtlasTexture.new()
+                atlas.atlas = sheet
+                atlas.region = Rect2((ai * 4 + frame_index) * 64, row * 72, 64, 72)
+                frames.add_frame(animation_name, atlas)
+    sprite.sprite_frames = frames
+    sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+    sprite.animation = "idle_down"
+    sprite.play()
+
+func _update_animation() -> void:
+    var direction_name := "down"
+    sprite.flip_h = false
+    if absf(facing.x) > absf(facing.y):
+        direction_name = "right"
+        sprite.flip_h = facing.x < 0.0
+    elif facing.y < 0.0:
+        direction_name = "up"
+    var speed := velocity.length()
+    var state := "idle"
+    if jump_anim > 0.06:
+        state = "jump"
+    elif dodge_time > 0.0 or (dodge_cooldown > 0.39 and dodge_cooldown < 0.62):
+        state = "dodge"
+    elif attack_anim > 0.47:
+        state = "attack"
+    elif speed > run_speed * 0.72:
+        state = "walk"
+        sprite.speed_scale = 1.35
+    elif speed > 12.0:
+        state = "walk"
+        sprite.speed_scale = 1.0
+    else:
+        sprite.speed_scale = 0.75
+    var anim_name := state + "_" + direction_name
+    if sprite.animation != anim_name:
+        sprite.play(anim_name)
+    if jump_anim > 0.06:
+        var progress := 1.0 - jump_anim / 0.48
+        sprite.position.y = -20.0 - sin(progress * PI) * 24.0
+        sprite.z_index = 2
+    else:
+        sprite.position.y = -20.0
+        sprite.z_index = 0
