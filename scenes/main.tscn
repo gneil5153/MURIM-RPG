@@ -129,7 +129,7 @@ offset_right = 620.0
 offset_bottom = 65.0
 mouse_filter = 2
 theme_override_font_sizes/font_size = 22
-text = "MURIM 0.9 · Esquiva atrás · Joystick dirige la esquiva"
+text = "MURIM 0.10 · Esquiva en cuatro direcciones"
 
 [node name="Marker0" type="MeshInstance3D" parent="."]
 position = Vector3(0, 0.03, -5)

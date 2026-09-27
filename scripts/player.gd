@@ -9,6 +9,9 @@ extends CharacterBody3D
 @export var attack_damage := 20.0
 var touch_move := Vector2.ZERO
 var touch_sprinting := false
+var stick_active := false
+var stick_world_direction := Vector3.FORWARD
+var dodge_lean := Vector3.ZERO
 var qi := 100.0
 var dodge_time := 0.0
 var attack_cooldown := 0.0
@@ -74,11 +77,13 @@ func _physics_process(delta):
     if dodge_time > 0.0:
         velocity.x = dodge_direction.x * dodge_speed
         velocity.z = dodge_direction.z * dodge_speed
+        var local_dodge: Vector3 = Basis(Vector3.UP, $Mesh.rotation.y).inverse() * dodge_direction
+        dodge_lean = Vector3(clampf(local_dodge.z * 0.32, -0.32, 0.32), 0.0, clampf(-local_dodge.x * 0.3, -0.3, 0.3))
         dodge_time = maxf(0.0, dodge_time - delta)
     else:
+        dodge_lean = Vector3.ZERO
         velocity.x = move_toward(velocity.x, dir.x * base_speed, acceleration * delta)
         velocity.z = move_toward(velocity.z, dir.z * base_speed, acceleration * delta)
-    $Mesh.rotation.z = -0.35 if dodge_time > 0.0 else 0.0
     # Keep camera yaw independent of the moving body.
     if dir.length() > 0.1:
         $Mesh.rotation.y = lerp_angle($Mesh.rotation.y, atan2(-dir.x, -dir.z), 12.0 * delta)
@@ -106,17 +111,19 @@ func attack():
 
 func set_move_vector(v: Vector2) -> void:
     touch_move = v.limit_length(1.0)
-    if touch_move.length() < 0.12:
+    stick_active = touch_move.length() >= 0.12
+    if not stick_active:
         touch_move = Vector2.ZERO
-    else:
-        var forward := -camera_pivot.global_transform.basis.z
-        forward.y = 0.0
-        forward = forward.normalized()
-        var right := camera_pivot.global_transform.basis.x
-        right.y = 0.0
-        right = right.normalized()
-        facing = (right * touch_move.x - forward * touch_move.y).normalized()
-        $Mesh.rotation.y = atan2(-facing.x, -facing.z)
+        return
+    var forward := -camera_pivot.global_transform.basis.z
+    forward.y = 0.0
+    forward = forward.normalized()
+    var right := camera_pivot.global_transform.basis.x
+    right.y = 0.0
+    right = right.normalized()
+    stick_world_direction = (right * touch_move.x - forward * touch_move.y).normalized()
+    facing = stick_world_direction
+    $Mesh.rotation.y = atan2(-facing.x, -facing.z)
 
 func jump() -> void:
     jump_buffer = 0.15
@@ -126,6 +133,7 @@ func dodge() -> void:
         qi -= 15.0
         dodge_time = 0.22
         dodge_cooldown = 0.55
-        dodge_direction = -facing
-        if touch_move.length() > 0.12:
-            dodge_direction = facing
+        var body_forward := -$Mesh.global_transform.basis.z
+        body_forward.y = 0.0
+        body_forward = body_forward.normalized()
+        dodge_direction = stick_world_direction if stick_active else -body_forward

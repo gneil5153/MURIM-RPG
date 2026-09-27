@@ -32,23 +32,30 @@ func _ready() -> void:
     skirt.top_radius = 0.29
     skirt.bottom_radius = 0.48
     skirt.height = 1.18
-    skirt.radial_segments = 10
+    skirt.radial_segments = 16
     _piece(self, "Long outer robe", skirt, Vector3(0, 0.91, 0), robe)
     _piece(self, "Inner tunic", _capsule(0.27, 1.05), Vector3(0, 1.41, 0), inner)
-    _piece(self, "Left robe panel", _box(Vector3(0.26, 0.92, 0.09)), Vector3(-0.14, 0.86, -0.342), robe_light, Vector3(0, 0, -0.07))
-    _piece(self, "Right robe panel", _box(Vector3(0.26, 0.92, 0.09)), Vector3(0.14, 0.86, -0.342), robe_light, Vector3(0, 0, 0.07))
-    _piece(self, "Blue hanging sash", _box(Vector3(0.12, 0.9, 0.07)), Vector3(0.22, 0.79, -0.402), inner, Vector3(0, 0, -0.12))
+    _piece(self, "Left robe panel", _box(Vector3(0.26, 0.92, 0.09)), Vector3(-0.14, 0.86, -0.342), robe_light, Vector3.ONE, Vector3(0, 0, -0.07))
+    _piece(self, "Right robe panel", _box(Vector3(0.26, 0.92, 0.09)), Vector3(0.14, 0.86, -0.342), robe_light, Vector3.ONE, Vector3(0, 0, 0.07))
+    _piece(self, "Blue hanging sash", _box(Vector3(0.12, 0.9, 0.07)), Vector3(0.22, 0.79, -0.402), inner, Vector3.ONE, Vector3(0, 0, -0.12))
 
     var belt := CylinderMesh.new()
     belt.top_radius = 0.34
     belt.bottom_radius = 0.34
     belt.height = 0.13
-    belt.radial_segments = 12
+    belt.radial_segments = 16
     _piece(self, "Wide dark belt", belt, Vector3(0, 1.31, 0), leather)
     _piece(self, "Belt clasp", _box(Vector3(0.17, 0.2, 0.055)), Vector3(0, 1.31, -0.354), trim)
     for side in [-1.0, 1.0]:
         _piece(self, "Belt rivet", _sphere(0.045), Vector3(side * 0.24, 1.31, -0.3), trim)
         _piece(self, "Crossed robe trim", _box(Vector3(0.095, 0.62, 0.07)), Vector3(side * 0.12, 1.67, -0.266), trim, Vector3.ONE, Vector3(0, 0, side * -0.33))
+
+    # Embroidered shoulder mantle layered over the robe collar.
+    for side in [-1.0, 1.0]:
+        _piece(self, "Shoulder mantle", _sphere(0.31), Vector3(side * 0.37, 1.84, 0.015), robe_light, Vector3(1.28, 0.52, 0.94))
+        _piece(self, "Shoulder filigree", _box(Vector3(0.32, 0.025, 0.02)), Vector3(side * 0.37, 1.91, -0.225), trim, Vector3.ONE, Vector3(0, 0, side * -0.08))
+        for mark in range(3):
+            _piece(self, "Shoulder stitch", _sphere(0.025), Vector3(side * (0.28 + mark * 0.09), 1.84, -0.275), trim)
 
     # Trousers, wrapped boots and wide sleeves.
     left_leg = _limb("Left leg", Vector3(-0.16, 0.67, 0), 0.15, 0.7, leather)
@@ -72,8 +79,12 @@ func _ready() -> void:
     _piece(self, "Face", _sphere(0.235), Vector3(0, 2.12, -0.015), skin, Vector3(0.9, 1.18, 0.82))
     for side in [-1.0, 1.0]:
         _piece(self, "Eye", _sphere(0.027), Vector3(side * 0.082, 2.145, -0.194), eyes, Vector3(1.0, 0.72, 0.55))
-        _piece(self, "Brow", _box(Vector3(0.085, 0.024, 0.025)), Vector3(side * 0.082, 2.195, -0.188), hair, Vector3(0, 0, side * 0.12))
+        _piece(self, "Pupil", _sphere(0.012), Vector3(side * 0.082, 2.145, -0.213), hair)
+        _piece(self, "Lower lid", _box(Vector3(0.07, 0.009, 0.012)), Vector3(side * 0.082, 2.119, -0.198), trim, Vector3.ONE, Vector3(0, 0, side * 0.04))
+        _piece(self, "Brow", _box(Vector3(0.085, 0.024, 0.025)), Vector3(side * 0.082, 2.195, -0.188), hair, Vector3.ONE, Vector3(0, 0, side * 0.12))
     _piece(self, "Nose", _sphere(0.035), Vector3(0, 2.105, -0.213), skin, Vector3(0.7, 1.0, 0.75))
+    _piece(self, "Mouth", _box(Vector3(0.07, 0.012, 0.012)), Vector3(0, 2.035, -0.205), leather)
+    _piece(self, "Subtle cheek scar", _box(Vector3(0.009, 0.055, 0.009)), Vector3(-0.135, 2.095, -0.164), trim, Vector3.ONE, Vector3(0, 0, -0.24))
 
     # Half-tied charcoal hair with a long back fall and loose strands.
     _piece(self, "Hair cap", _sphere(0.25), Vector3(0, 2.29, 0.01), hair, Vector3(1.04, 0.72, 0.95))
@@ -81,19 +92,33 @@ func _ready() -> void:
     _piece(self, "Long tied hair", _capsule(0.105, 1.0), Vector3(0, 1.76, 0.23), hair, Vector3(1.0, 1.0, 1.15), Vector3(-0.18, 0, 0))
     _piece(self, "Loose left lock", _capsule(0.055, 0.62), Vector3(-0.17, 1.98, 0.13), hair, Vector3(1.0, 1.0, 1.0), Vector3(0.12, 0, -0.13))
     _piece(self, "Loose right lock", _capsule(0.05, 0.55), Vector3(0.18, 1.98, 0.12), hair, Vector3(1.0, 1.0, 1.0), Vector3(-0.1, 0, 0.15))
+    for strand in range(4):
+        var strand_x := -0.12 + strand * 0.08
+        _piece(self, "Back hair strand", _capsule(0.026, 0.78 - strand * 0.07), Vector3(strand_x, 1.61, 0.29 + absf(strand_x)), hair, Vector3.ONE, Vector3(-0.16, 0, strand_x * 0.45))
     _piece(self, "Wind-swept fringe", _capsule(0.055, 0.45), Vector3(-0.08, 2.24, -0.16), hair, Vector3(1.0, 1.0, 0.8), Vector3(0, 0, -0.42))
 
     # Fine embroidery and loose cloth tabs that catch the light.
     for i in range(4):
         var y := 1.09 - i * 0.16
         _piece(self, "Robe embroidery", _box(Vector3(0.13, 0.025, 0.014)), Vector3(-0.25, y, -0.393), trim, Vector3.ONE, Vector3(0, 0, -0.16))
+        _piece(self, "Robe embroidery", _box(Vector3(0.13, 0.025, 0.014)), Vector3(0.25, y, -0.393), trim, Vector3.ONE, Vector3(0, 0, 0.16))
     for side in [-1.0, 1.0]:
-        var tail := _piece(self, "Trailing sash", _box(Vector3(0.16, 0.86, 0.045)), Vector3(side * 0.31, 0.85, 0.31), inner, Vector3(0, 0, side * -0.12))
+        var tail := _piece(self, "Trailing sash", _box(Vector3(0.16, 0.86, 0.045)), Vector3(side * 0.31, 0.85, 0.31), inner, Vector3.ONE, Vector3(0, 0, side * -0.12))
         cloak_tails.append(tail)
 
+    # Gold hem studs, cord toggles and an embroidered back motif.
+    for i in range(9):
+        var angle := -1.05 + i * 0.2625
+        _piece(self, "Gold hem stud", _sphere(0.025), Vector3(sin(angle) * 0.46, 0.38, cos(angle) * 0.46), trim)
+    for i in range(5):
+        _piece(self, "Front cord toggle", _sphere(0.028), Vector3(0.0, 1.76 - i * 0.11, -0.31), trim)
+    _piece(self, "Back crest", _sphere(0.14), Vector3(0, 1.67, 0.42), trim, Vector3(1.0, 1.2, 0.24))
+    _piece(self, "Crest center", _sphere(0.075), Vector3(0, 1.67, 0.465), robe_light, Vector3(1.0, 1.0, 0.3))
+
     # A sheathed sword across the back, visible when the camera circles him.
-    _piece(self, "Sword sheath", _box(Vector3(0.14, 1.42, 0.12)), Vector3(0.06, 1.42, 0.34), leather, Vector3(0, 0, -0.43))
+    _piece(self, "Sword sheath", _box(Vector3(0.14, 1.42, 0.12)), Vector3(0.06, 1.42, 0.34), leather, Vector3.ONE, Vector3(0, 0, -0.43))
     _piece(self, "Sword pommel", _sphere(0.09), Vector3(-0.24, 2.08, 0.34), trim)
+    _piece(self, "Sword grip", _capsule(0.065, 0.38), Vector3(-0.16, 1.99, 0.35), leather, Vector3.ONE, Vector3(0, 0, -0.43))
     _piece(self, "Sword guard", _box(Vector3(0.48, 0.075, 0.14)), Vector3(0.37, 0.78, 0.34), trim, Vector3.ONE, Vector3(0, 0, -0.43))
     _piece(self, "Sheath ring", _box(Vector3(0.18, 0.07, 0.15)), Vector3(0.23, 1.55, 0.27), trim, Vector3.ONE, Vector3(0, 0, -0.43))
 
@@ -118,7 +143,9 @@ func _process(delta: float) -> void:
     right_arm.rotation.z = lerpf(right_arm.rotation.z, -jump_pose, delta * 7.0)
     var bob := sin(walk_phase * 2.0) * 0.045 * blend
     position.y = lerpf(position.y, bob + clampf(actor.velocity.y * 0.006, -0.035, 0.035), delta * 12.0)
-    rotation.x = lerpf(rotation.x, -0.055 * blend + (0.04 if airborne else 0.0), delta * 8.0)
+    var dodge_lean: Vector3 = actor.get("dodge_lean")
+    rotation.x = lerpf(rotation.x, -0.055 * blend + (0.04 if airborne else 0.0) + dodge_lean.x, delta * 14.0)
+    rotation.z = lerpf(rotation.z, dodge_lean.z, delta * 14.0)
     for index in range(cloak_tails.size()):
         var tail := cloak_tails[index]
         tail.rotation.z = sin(walk_phase * 0.75 + float(index)) * 0.15 * blend
@@ -167,8 +194,8 @@ func _sphere(radius: float) -> SphereMesh:
     var shape := SphereMesh.new()
     shape.radius = radius
     shape.height = radius * 2.0
-    shape.radial_segments = 12
-    shape.rings = 8
+    shape.radial_segments = 18
+    shape.rings = 12
     return shape
 
 func _cylinder(radius: float, height: float) -> CylinderMesh:

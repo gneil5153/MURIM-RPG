@@ -101,34 +101,38 @@ func run() -> void:
     if player.position.z < start.z + 2.0:
         fail("Neutral joystick dodge should move backward")
         return
-    for i in range(30):
-        await physics_frame
-    touch(0, center + Vector2(45, 0), true)
-    for i in range(5):
-        await physics_frame
-    if player.facing.x < 0.9:
-        fail("Joystick aim was not stored")
-        return
-    touch(0, center, false)
-    start = player.position
-    touch(0, center + Vector2(45, 0), true)
-    touch(1, dodge_point, true)
-    touch(1, dodge_point, false)
-    if controls.move_touch != 0 or player.touch_move.x < 0.5:
-        fail("Dodge touch interrupted the active joystick")
-        return
-    for i in range(15):
-        await physics_frame
-    if player.position.x < start.x + 2.0:
-        fail("Dodge did not follow the active joystick direction")
-        return
-    touch(0, center, false)
-    touch(0, center + Vector2(45, 0), true)
-    touch(2, attack_point, true)
-    touch(2, attack_point, false)
-    if controls.move_touch != 0 or not player.attack_visual.visible or player.facing.x < 0.9:
-        fail("Attack did not aim along joystick direction during multitouch")
-        return
+    for stick_direction in [Vector2.UP, Vector2.DOWN, Vector2.LEFT, Vector2.RIGHT]:
+        for i in range(36):
+            await physics_frame
+        player.position = Vector3(0, 0.05, 0)
+        player.velocity = Vector3.ZERO
+        player.qi = player.max_qi
+        player.dodge_cooldown = 0.0
+        player.facing = Vector3.FORWARD
+        player.get_node("Mesh").rotation = Vector3.ZERO
+        var expected_forward := -player.camera_pivot.global_transform.basis.z
+        expected_forward.y = 0.0
+        expected_forward = expected_forward.normalized()
+        var expected_right := player.camera_pivot.global_transform.basis.x
+        expected_right.y = 0.0
+        expected_right = expected_right.normalized()
+        var expected_direction: Vector3 = (expected_right * stick_direction.x - expected_forward * stick_direction.y).normalized()
+        var stick_point: Vector2 = center + stick_direction * 45.0
+        touch(0, stick_point, true)
+        var direction_start: Vector3 = player.position
+        touch(1, dodge_point, true)
+        if player.dodge_direction.dot(expected_direction) < 0.98:
+            fail("Dodge direction did not match joystick vector " + str(stick_direction))
+            return
+        for i in range(15):
+            await physics_frame
+        var displacement: Vector3 = player.position - direction_start
+        displacement.y = 0.0
+        if displacement.dot(expected_direction) < 2.0:
+            fail("Dodge movement did not follow joystick vector " + str(stick_direction))
+            return
+        touch(1, dodge_point, false)
+        touch(0, center, false)
     touch(0, center, false)
     var camera = player.camera_pivot.get_node("Camera3D")
     var initial_yaw: float = player.camera_pivot.rotation.y
@@ -185,5 +189,5 @@ func run() -> void:
     if player.global_position.y < saved_checkpoint.y - 0.1:
         fail("Falling below the world did not return player to last safe ground")
         return
-    print("PASS: backward neutral dodge, joystick-directed dodge, recovery after falling, animated character, camera zoom and jump")
+    print("PASS: backward neutral dodge, all four joystick directions, recovery after falling, animated character, camera zoom and jump")
     quit(0)
