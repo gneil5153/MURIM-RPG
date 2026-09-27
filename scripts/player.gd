@@ -15,6 +15,7 @@ var dodge_cooldown := 0.0
 var attack_cooldown := 0.0
 var attack_anim := 0.0
 var combo_step := 0
+var last_attack_time := -10.0
 var jump_buffer := 0.0
 var jump_held := false
 var jump_anim := 0.0
@@ -89,27 +90,39 @@ func set_move_vector(value: Vector2) -> void:
 func attack() -> void:
     if attack_cooldown > 0.0:
         return
+    var now := float(Time.get_ticks_msec()) / 1000.0
+    if now - last_attack_time > 0.95:
+        combo_step = 0
+    else:
+        combo_step = (combo_step + 1) % 3
+    last_attack_time = now
     attack_cooldown = 0.34
-    attack_anim = 0.8
-    combo_step = (combo_step + 1) % 3
+    attack_anim = 0.9 if combo_step == 1 else (1.0 if combo_step == 2 else 0.8)
     _show_slash()
+    if combo_step == 2:
+        for candidate in get_tree().get_nodes_in_group("damageable"):
+            if candidate is Node2D and candidate.global_position.distance_to(global_position) <= 76.0 and candidate.has_method("take_damage"):
+                candidate.take_damage(32.0)
+        return
     var best: Node2D
-    var best_distance := 92.0
+    var best_distance := 92.0 if combo_step == 0 else 112.0
     for candidate in get_tree().get_nodes_in_group("damageable"):
         if not candidate is Node2D:
             continue
         var offset: Vector2 = candidate.global_position - global_position
         var distance := offset.length()
-        if distance <= best_distance and (distance < 1.0 or facing.dot(offset.normalized()) > 0.15):
+        var in_attack_arc := distance < 1.0 or facing.dot(offset.normalized()) > (0.15 if combo_step == 0 else -0.2)
+        if distance <= best_distance and in_attack_arc:
             best = candidate
             best_distance = distance
     if best and best.has_method("take_damage"):
-        best.take_damage(20.0 + float(combo_step) * 5.0)
+        var damage := 18.0 if combo_step == 0 else 25.0
+        best.take_damage(damage)
 
 func _show_slash() -> void:
     attack_visual.rotation = facing.angle() + PI * 0.5
     attack_visual.visible = true
-    attack_visual.call("restart")
+    attack_visual.call("restart", combo_step)
 
 func dodge() -> void:
     if dodge_cooldown > 0.0 or qi < 12.0:

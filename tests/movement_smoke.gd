@@ -54,6 +54,22 @@ func run() -> void:
         fail("Attack did not animate and damage the training target")
         return
     touch(1,attack_point,false)
+    var after_first_attack: float = dummy.health
+    player.attack_cooldown = 0.0
+    player.attack()
+    if player.attack_visual.current_style != 1 or dummy.health != after_first_attack - 25.0:
+        fail("Second combo hit did not use the stronger rising cut")
+        return
+    player.attack_cooldown = 0.0
+    dummy.position = Vector2(0, 65)
+    var second_dummy := Node2D.new()
+    second_dummy.set_script(load("res://scripts/training_dummy.gd"))
+    second_dummy.position = Vector2(60, 0)
+    world.add_child(second_dummy)
+    player.attack()
+    if player.attack_visual.current_style != 2 or dummy.health != after_first_attack - 57.0 or second_dummy.get("health") != 68.0:
+        fail("Third combo hit did not perform the all-around Qi spin")
+        return
     player.attack_cooldown=0.0
     player.facing=Vector2.DOWN
     var before_dodge: Vector2 = player.position

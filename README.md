@@ -4,7 +4,7 @@ A small Android action RPG prototype built in Godot 4.4. The current build uses 
 
 ## Controls
 - Drag the left virtual stick to walk; push it toward the edge to run.
-- Tap **Ataque** to strike in the direction the character faces.
+- Tap **Ataque** repeatedly to chain three forms: a quick cut, a rising cut, then an all-around Qi spin. The combo resets if you pause for about one second.
 - Tap **Esquiva** to dodge along the stick direction, or backward if the stick is neutral.
 - Tap **Salto** for a short hop.
 - Drag the right side to pan the camera; pinch to zoom.
