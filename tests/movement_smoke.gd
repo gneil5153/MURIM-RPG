@@ -30,6 +30,10 @@ func run() -> void:
     var controls = world.get_node("HUD/TouchControls")
     var player = world.get_node("Player")
     var dummy = world.get_node("TrainingDummy")
+    var character_model = player.get_node("Mesh")
+    if character_model.get_child_count() < 30 or character_model.get_node_or_null("Hair cap") == null or character_model.get_node_or_null("Sword sheath") == null:
+        fail("Stylized wuxia character model was not built")
+        return
     dummy.position.x = 20.0
     var center: Vector2 = controls.get_global_transform_with_canvas() * controls.stick_center()
     var start: Vector3 = player.position
