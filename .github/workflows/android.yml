@@ -18,6 +18,28 @@ jobs:
           mkdir -p ~/.local/share/godot/export_templates
           mv /root/.local/share/godot/export_templates/4.4.stable ~/.local/share/godot/export_templates/4.4.stable || true
 
+      - name: Configure Android
+        run: |
+          mkdir -p ~/.config/godot
+          mkdir -p ~/.android
+
+          keytool -keyalg RSA \
+            -genkeypair \
+            -alias androiddebugkey \
+            -keypass android \
+            -keystore ~/.android/debug.keystore \
+            -storepass android \
+            -dname "CN=Android Debug,O=Android,C=US" \
+            -validity 10000
+
+          JAVA_BIN="$(command -v java)"
+          JAVA_HOME_DIR="$(dirname "$(dirname "$(readlink -f "$JAVA_BIN")")")"
+
+          godot --headless --editor --quit \
+            --path . \
+            --editor-settings android/java_sdk_path="$JAVA_HOME_DIR" \
+            --editor-settings android/android_sdk_path="$ANDROID_HOME" || true
+
       - name: Export APK
         run: |
           mkdir -p build
