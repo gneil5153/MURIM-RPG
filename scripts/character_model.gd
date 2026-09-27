@@ -31,37 +31,37 @@ func _ready() -> void:
 
     # Long layered robe, slightly flared toward the hem.
     var skirt := CylinderMesh.new()
-    skirt.top_radius = 0.29
-    skirt.bottom_radius = 0.48
+    skirt.top_radius = 0.24
+    skirt.bottom_radius = 0.36
     skirt.height = 0.9
     skirt.radial_segments = 16
     _piece(self, "Long outer robe", skirt, Vector3(0, 0.72, 0), robe)
-    _piece(self, "Inner tunic", _capsule(0.27, 1.05), Vector3(0, 1.41, 0), inner)
-    _piece(self, "Blue hanging sash", _box(Vector3(0.12, 0.9, 0.07)), Vector3(0.22, 0.79, -0.402), inner, Vector3.ONE, Vector3(0, 0, -0.12))
+    _piece(self, "Inner tunic", _capsule(0.23, 1.0), Vector3(0, 1.41, 0), inner)
+    _piece(self, "Blue hanging sash", _box(Vector3(0.09, 0.82, 0.05)), Vector3(0.18, 0.79, -0.34), inner, Vector3.ONE, Vector3(0, 0, -0.12))
 
     var belt := CylinderMesh.new()
-    belt.top_radius = 0.34
-    belt.bottom_radius = 0.34
-    belt.height = 0.13
+    belt.top_radius = 0.27
+    belt.bottom_radius = 0.27
+    belt.height = 0.12
     belt.radial_segments = 16
     _piece(self, "Wide dark belt", belt, Vector3(0, 1.31, 0), leather)
-    _piece(self, "Belt clasp", _box(Vector3(0.17, 0.2, 0.055)), Vector3(0, 1.31, -0.354), trim)
+    _piece(self, "Belt clasp", _box(Vector3(0.13, 0.16, 0.045)), Vector3(0, 1.31, -0.285), trim)
     for side in [-1.0, 1.0]:
-        _piece(self, "Belt rivet", _sphere(0.045), Vector3(side * 0.24, 1.31, -0.3), trim)
-        _piece(self, "Crossed robe trim", _box(Vector3(0.095, 0.62, 0.07)), Vector3(side * 0.12, 1.67, -0.266), trim, Vector3.ONE, Vector3(0, 0, side * -0.33))
+        _piece(self, "Belt rivet", _sphere(0.032), Vector3(side * 0.19, 1.31, -0.24), trim)
+        _piece(self, "Crossed robe trim", _box(Vector3(0.07, 0.55, 0.045)), Vector3(side * 0.1, 1.65, -0.205), trim, Vector3.ONE, Vector3(0, 0, side * -0.33))
 
     # Embroidered shoulder mantle layered over the robe collar.
     for side in [-1.0, 1.0]:
-        _piece(self, "Shoulder mantle", _sphere(0.31), Vector3(side * 0.37, 1.84, 0.015), robe_light, Vector3(1.28, 0.52, 0.94))
-        _piece(self, "Shoulder filigree", _box(Vector3(0.32, 0.025, 0.02)), Vector3(side * 0.37, 1.91, -0.225), trim, Vector3.ONE, Vector3(0, 0, side * -0.08))
+        _piece(self, "Shoulder mantle", _sphere(0.25), Vector3(side * 0.3, 1.84, 0.015), robe_light, Vector3(1.1, 0.45, 0.84))
+        _piece(self, "Shoulder filigree", _box(Vector3(0.24, 0.02, 0.018)), Vector3(side * 0.3, 1.9, -0.19), trim, Vector3.ONE, Vector3(0, 0, side * -0.08))
         for mark in range(3):
-            _piece(self, "Shoulder stitch", _sphere(0.025), Vector3(side * (0.28 + mark * 0.09), 1.84, -0.275), trim)
+            _piece(self, "Shoulder stitch", _sphere(0.018), Vector3(side * (0.22 + mark * 0.055), 1.84, -0.235), trim)
 
     # Two-part legs let the knees and boots follow each stride visibly.
-    left_leg = _limb("Left leg", Vector3(-0.17, 0.76, 0), 0.13, 0.58, leather)
-    right_leg = _limb("Right leg", Vector3(0.17, 0.76, 0), 0.13, 0.58, leather)
-    _piece(left_leg, "Left split robe panel", _box(Vector3(0.24, 0.84, 0.055)), Vector3(0.045, 0.12, -0.46), robe_light, Vector3.ONE, Vector3(0, 0, -0.06))
-    _piece(right_leg, "Right split robe panel", _box(Vector3(0.24, 0.84, 0.055)), Vector3(-0.045, 0.12, -0.46), robe_light, Vector3.ONE, Vector3(0, 0, 0.06))
+    left_leg = _limb("Left leg", Vector3(-0.14, 0.76, 0), 0.115, 0.56, leather)
+    right_leg = _limb("Right leg", Vector3(0.14, 0.76, 0), 0.115, 0.56, leather)
+    _piece(left_leg, "Left split robe panel", _box(Vector3(0.19, 0.76, 0.045)), Vector3(0.035, 0.1, -0.36), robe_light, Vector3.ONE, Vector3(0, 0, -0.06))
+    _piece(right_leg, "Right split robe panel", _box(Vector3(0.19, 0.76, 0.045)), Vector3(-0.035, 0.1, -0.36), robe_light, Vector3.ONE, Vector3(0, 0, 0.06))
     left_knee = Node3D.new()
     left_knee.name = "Left knee"
     left_knee.position = Vector3(0, -0.27, 0)
@@ -70,27 +70,25 @@ func _ready() -> void:
     right_knee.name = "Right knee"
     right_knee.position = Vector3(0, -0.27, 0)
     right_leg.add_child(right_knee)
-    _piece(left_knee, "Left shin", _capsule(0.105, 0.46), Vector3(0, -0.16, 0), leather)
-    _piece(right_knee, "Right shin", _capsule(0.105, 0.46), Vector3(0, -0.16, 0), leather)
-    _piece(left_knee, "Left boot", _box(Vector3(0.25, 0.2, 0.4)), Vector3(0, -0.4, -0.08), leather)
-    _piece(right_knee, "Right boot", _box(Vector3(0.25, 0.2, 0.4)), Vector3(0, -0.4, -0.08), leather)
-    _piece(left_knee, "Left boot wrap", _box(Vector3(0.28, 0.1, 0.35)), Vector3(0, -0.29, -0.06), trim)
-    _piece(right_knee, "Right boot wrap", _box(Vector3(0.28, 0.1, 0.35)), Vector3(0, -0.29, -0.06), trim)
+    _piece(left_knee, "Left shin", _capsule(0.09, 0.42), Vector3(0, -0.145, 0), leather)
+    _piece(right_knee, "Right shin", _capsule(0.09, 0.42), Vector3(0, -0.145, 0), leather)
+    _piece(left_knee, "Left boot", _box(Vector3(0.22, 0.16, 0.34)), Vector3(0, -0.36, -0.07), leather)
+    _piece(right_knee, "Right boot", _box(Vector3(0.22, 0.16, 0.34)), Vector3(0, -0.36, -0.07), leather)
+    _piece(left_knee, "Left boot wrap", _box(Vector3(0.24, 0.08, 0.3)), Vector3(0, -0.27, -0.055), trim)
+    _piece(right_knee, "Right boot wrap", _box(Vector3(0.24, 0.08, 0.3)), Vector3(0, -0.27, -0.055), trim)
 
     # Sleeves hang from the shoulders; hands are children so they cannot float
     # in place while the arms swing.
-    left_arm = _limb("Left sleeve", Vector3(-0.43, 1.72, 0), 0.16, 0.68, robe_light)
-    right_arm = _limb("Right sleeve", Vector3(0.43, 1.72, 0), 0.16, 0.68, robe_light)
-    _piece(left_arm, "Left hand", _sphere(0.12), Vector3(0, -0.43, -0.025), skin)
-    _piece(right_arm, "Right hand", _sphere(0.12), Vector3(0, -0.43, -0.025), skin)
-    _piece(left_arm, "Left cuff", _box(Vector3(0.31, 0.1, 0.31)), Vector3(0, -0.31, 0), inner)
-    _piece(right_arm, "Right cuff", _box(Vector3(0.31, 0.1, 0.31)), Vector3(0, -0.31, 0), inner)
-    for side in [-1.0, 1.0]:
-        _piece(self, "Sleeve cuff", _capsule(0.19, 0.18), Vector3(side * 0.72, 1.72, 0), inner, Vector3.ONE, Vector3(0, 0, side * PI * 0.5))
+    left_arm = _limb("Left sleeve", Vector3(-0.35, 1.72, 0), 0.125, 0.66, robe_light)
+    right_arm = _limb("Right sleeve", Vector3(0.35, 1.72, 0), 0.125, 0.66, robe_light)
+    _piece(left_arm, "Left hand", _sphere(0.09), Vector3(0, -0.42, -0.025), skin)
+    _piece(right_arm, "Right hand", _sphere(0.09), Vector3(0, -0.42, -0.025), skin)
+    _piece(left_arm, "Left cuff", _box(Vector3(0.24, 0.08, 0.24)), Vector3(0, -0.31, 0), inner)
+    _piece(right_arm, "Right cuff", _box(Vector3(0.24, 0.08, 0.24)), Vector3(0, -0.31, 0), inner)
 
     # Neck and young, narrow face with visible brows and eyes.
-    _piece(self, "Neck", _cylinder(0.12, 0.2), Vector3(0, 1.91, 0), skin)
-    _piece(self, "Face", _sphere(0.235), Vector3(0, 2.12, -0.015), skin, Vector3(0.9, 1.18, 0.82))
+    _piece(self, "Neck", _cylinder(0.1, 0.18), Vector3(0, 1.91, 0), skin)
+    _piece(self, "Face", _sphere(0.22), Vector3(0, 2.12, -0.015), skin, Vector3(0.9, 1.18, 0.82))
     for side in [-1.0, 1.0]:
         _piece(self, "Eye", _sphere(0.027), Vector3(side * 0.082, 2.145, -0.194), eyes, Vector3(1.0, 0.72, 0.55))
         _piece(self, "Pupil", _sphere(0.012), Vector3(side * 0.082, 2.145, -0.213), hair)
@@ -114,8 +112,8 @@ func _ready() -> void:
     # Fine embroidery and loose cloth tabs that catch the light.
     for i in range(4):
         var y := 1.09 - i * 0.16
-        _piece(self, "Robe embroidery", _box(Vector3(0.13, 0.025, 0.014)), Vector3(-0.25, y, -0.393), trim, Vector3.ONE, Vector3(0, 0, -0.16))
-        _piece(self, "Robe embroidery", _box(Vector3(0.13, 0.025, 0.014)), Vector3(0.25, y, -0.393), trim, Vector3.ONE, Vector3(0, 0, 0.16))
+        _piece(self, "Robe embroidery", _box(Vector3(0.1, 0.022, 0.012)), Vector3(-0.18, y, -0.3), trim, Vector3.ONE, Vector3(0, 0, -0.16))
+        _piece(self, "Robe embroidery", _box(Vector3(0.1, 0.022, 0.012)), Vector3(0.18, y, -0.3), trim, Vector3.ONE, Vector3(0, 0, 0.16))
     for side in [-1.0, 1.0]:
         var tail := _piece(self, "Trailing sash", _box(Vector3(0.16, 0.86, 0.045)), Vector3(side * 0.31, 0.85, 0.31), inner, Vector3.ONE, Vector3(0, 0, side * -0.12))
         cloak_tails.append(tail)
@@ -123,7 +121,7 @@ func _ready() -> void:
     # Gold hem studs, cord toggles and an embroidered back motif.
     for i in range(9):
         var angle := -1.05 + i * 0.2625
-        _piece(self, "Gold hem stud", _sphere(0.025), Vector3(sin(angle) * 0.46, 0.38, cos(angle) * 0.46), trim)
+        _piece(self, "Gold hem stud", _sphere(0.02), Vector3(sin(angle) * 0.345, 0.31, cos(angle) * 0.345), trim)
     for i in range(5):
         _piece(self, "Front cord toggle", _sphere(0.028), Vector3(0.0, 1.76 - i * 0.11, -0.31), trim)
     _piece(self, "Back crest", _sphere(0.14), Vector3(0, 1.67, 0.42), trim, Vector3(1.0, 1.2, 0.24))
