@@ -2,9 +2,12 @@ extends CharacterBody2D
 
 @export var walk_speed := 205.0
 @export var run_speed := 325.0
-@export var acceleration := 1450.0
-@export var braking := 1750.0
+@export var acceleration := 1812.5
+@export var braking := 2187.5
 @export var max_qi := 100.0
+const SPECIAL_QI_COST := 30.0
+const SPECIAL_COOLDOWN_TIME := 5.0
+const SPECIAL_DAMAGE := 45.0
 var touch_move := Vector2.ZERO
 var touch_sprinting := false
 var qi := 100.0
@@ -14,6 +17,8 @@ var dodge_time := 0.0
 var dodge_cooldown := 0.0
 var attack_cooldown := 0.0
 var attack_anim := 0.0
+var special_anim := 0.0
+var special_cooldown := 0.0
 var combo_step := 0
 var last_attack_time := -10.0
 var jump_buffer := 0.0
@@ -23,6 +28,7 @@ var landing_impact := 0.0
 var turn_lean := 0.0
 var dodge_lean := Vector2.ZERO
 var attack_visual: Node2D
+var special_visual: Node2D
 @onready var camera: Camera2D = $Camera2D
 @onready var sprite: AnimatedSprite2D = $Sprite
 
@@ -35,16 +41,27 @@ func _ready() -> void:
     attack_visual.set_script(load("res://scripts/slash_effect.gd"))
     add_child(attack_visual)
     attack_visual.visible = false
+    special_visual = Node2D.new()
+    special_visual.name = "RadiantBurst"
+    special_visual.position = Vector2(0, -42)
+    special_visual.z_index = 3
+    special_visual.set_script(load("res://scripts/special_effect.gd"))
+    add_child(special_visual)
+    special_visual.visible = false
 
 func _physics_process(delta: float) -> void:
     dodge_cooldown = maxf(0.0, dodge_cooldown - delta)
     attack_cooldown = maxf(0.0, attack_cooldown - delta)
+    special_cooldown = maxf(0.0, special_cooldown - delta)
     attack_anim = maxf(0.0, attack_anim - delta * 3.0)
+    special_anim = maxf(0.0, special_anim - delta)
     jump_buffer = maxf(0.0, jump_buffer - delta)
     jump_anim = maxf(0.0, jump_anim - delta)
     landing_impact = maxf(0.0, landing_impact - delta * 3.0)
     if Input.is_action_just_pressed("attack"):
         attack()
+    if Input.is_action_just_pressed("special"):
+        special_attack()
     if Input.is_action_just_pressed("dodge"):
         dodge()
     if Input.is_action_just_pressed("jump"):
@@ -113,6 +130,21 @@ func attack() -> void:
         var damage := 18.0 if combo_step == 0 else 25.0
         best.take_damage(damage)
 
+func special_attack() -> void:
+    if special_cooldown > 0.0 or qi < SPECIAL_QI_COST:
+        return
+    qi -= SPECIAL_QI_COST
+    special_cooldown = SPECIAL_COOLDOWN_TIME
+    special_anim = 0.55
+    var frame := sprite.sprite_frames.get_frame_texture("idle_down", 0)
+    var radius := frame.get_size().y * sprite.scale.y * 3.0
+    special_visual.visible = true
+    special_visual.call("restart", radius)
+    var center := special_visual.global_position
+    for candidate in get_tree().get_nodes_in_group("damageable"):
+        if candidate is Node2D and candidate.global_position.distance_to(center) <= radius and candidate.has_method("take_damage"):
+            candidate.take_damage(SPECIAL_DAMAGE)
+
 func _show_slash() -> void:
     attack_visual.rotation = facing.angle() + PI * 0.5
     attack_visual.visible = true
@@ -159,13 +191,13 @@ func _setup_animations() -> void:
     sprite.play()
 
 func _update_animation() -> void:
-    var direction_name := "down"
+    var direction_name := "up"
     sprite.flip_h = false
     if absf(facing.x) > absf(facing.y):
         direction_name = "right"
         sprite.flip_h = facing.x < 0.0
     elif facing.y < 0.0:
-        direction_name = "up"
+        direction_name = "down"
     var speed := velocity.length()
     var state := "idle"
     if jump_anim > 0.06:

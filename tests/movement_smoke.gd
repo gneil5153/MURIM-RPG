@@ -29,8 +29,11 @@ func run() -> void:
     var start: Vector2 = player.position
     touch(0, center + Vector2(0,-40), true)
     for i in range(24): await physics_frame
-    if player.position.y >= start.y - 18 or not player.sprite.animation.begins_with("walk_up"):
+    if player.position.y >= start.y - 18 or not player.sprite.animation.begins_with("walk_down"):
         fail("Joystick did not move and animate the pixel character")
+        return
+    if player.acceleration != 1812.5 or player.braking != 2187.5:
+        fail("Movement acceleration and braking are not 25 percent firmer")
         return
     var walk_speed: float = player.velocity.length()
     var drag := InputEventScreenDrag.new()
@@ -51,6 +54,16 @@ func run() -> void:
         return
     player.global_position = Vector2.ZERO
     player.velocity = Vector2.ZERO
+    player.facing = Vector2.UP
+    player._update_animation()
+    if not player.sprite.animation.begins_with("idle_down"):
+        fail("Moving upward did not use the inverted front-facing animation")
+        return
+    player.facing = Vector2.DOWN
+    player._update_animation()
+    if not player.sprite.animation.begins_with("idle_up"):
+        fail("Moving downward did not use the inverted back-facing animation")
+        return
     player.facing = Vector2.UP
     dummy.position = Vector2(0,-78)
     for i in range(3): await physics_frame
@@ -76,6 +89,20 @@ func run() -> void:
     if player.attack_visual.current_style != 2 or dummy.health != after_first_attack - 57.0 or second_dummy.get("health") != 68.0:
         fail("Third combo hit did not perform the all-around Qi spin")
         return
+    var far_dummy := Node2D.new()
+    far_dummy.set_script(load("res://scripts/training_dummy.gd"))
+    far_dummy.position = Vector2(400, 0)
+    world.add_child(far_dummy)
+    var special_point: Vector2 = controls.get_global_transform_with_canvas() * (controls.get_node("Special").position + controls.get_node("Special").size/2.0)
+    var qi_before_special: float = player.qi
+    touch(5, special_point, true)
+    if not player.special_visual.visible or player.special_cooldown <= 0.0 or player.qi != qi_before_special - 30.0:
+        fail("Special button did not create the radiant attack and consume Qi")
+        return
+    if dummy.health != 0.0 or second_dummy.get("health") != 23.0 or far_dummy.get("health") != 100.0 or absf(player.special_visual.max_radius - 324.0) > 1.0:
+        fail("Radiant special did not apply its three-character-height radius correctly")
+        return
+    touch(5, special_point, false)
     player.attack_cooldown=0.0
     player.facing=Vector2.DOWN
     var before_dodge: Vector2 = player.position
@@ -110,5 +137,5 @@ func run() -> void:
         return
     touch(3,Vector2(850,260),false)
     touch(4,Vector2(1080,260),false)
-    print("PASS: 2D pixel sprite, joystick walking/running, attack, dodge, hop and camera zoom")
+    print("PASS: 25% firmer movement, inverted vertical facing, combo attacks, radiant special, dodge, hop and camera zoom")
     quit(0)

@@ -91,6 +91,18 @@ offset_right = -34.0
 offset_bottom = -186.0
 text = "SALTO"
 
+[node name="Special" type="Button" parent="HUD/TouchControls"]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -342.0
+offset_top = -280.0
+offset_right = -198.0
+offset_bottom = -136.0
+text = "ESPECIAL"
+
 [node name="Status" type="Label" parent="HUD/TouchControls"]
 offset_left = 24.0
 offset_top = 57.0
@@ -116,5 +128,5 @@ offset_top = 18.0
 offset_right = -24.0
 offset_bottom = 48.0
 mouse_filter = 2
-text = "DESLIZA PARA MOVER · PINZA PARA ZOOM"
+text = "JOYSTICK: CAMINAR/CORRER · PINZA: ZOOM · E: ESPECIAL"
 alignment = 2

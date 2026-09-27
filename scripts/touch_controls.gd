@@ -39,13 +39,14 @@ func _input(event: InputEvent) -> void:
                 get_viewport().set_input_as_handled()
                 return
         else:
-            for name in ["Attack", "Dodge", "Jump"]:
+            for name in ["Attack", "Dodge", "Jump", "Special"]:
                 var button := get_node(name) as Button
                 if Rect2(button.position, button.size).has_point(point):
                     action_touches[event.index] = name
                     if name == "Attack": player.attack()
                     elif name == "Dodge": player.dodge()
-                    else: player.jump()
+                    elif name == "Jump": player.jump()
+                    else: player.special_attack()
                     get_viewport().set_input_as_handled()
                     return
             if move_touch == -1 and point.distance_to(stick_center()) <= STICK_RADIUS + 28.0:
@@ -102,7 +103,9 @@ func _process(_delta: float) -> void:
     $Attack.modulate = Color(1.0,0.75,0.3) if player.attack_cooldown > 0.0 else Color.WHITE
     $Dodge.modulate = Color(0.4,0.8,1.0) if player.dodge_cooldown > 0.0 else Color.WHITE
     $Jump.modulate = Color(0.55,1.0,0.65) if player.jump_anim > 0.2 else Color.WHITE
+    $Special.modulate = Color(0.55,0.62,0.7) if player.special_cooldown > 0.0 or player.qi < player.SPECIAL_QI_COST else Color.WHITE
     $Status.text = "QI  %d / 100" % int(player.qi)
 func _on_attack_pressed() -> void: player.attack()
 func _on_dodge_pressed() -> void: player.dodge()
 func _on_jump_pressed() -> void: player.jump()
+func _on_special_pressed() -> void: player.special_attack()
