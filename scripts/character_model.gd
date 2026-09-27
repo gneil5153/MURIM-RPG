@@ -14,6 +14,8 @@ var left_arm: Node3D
 var right_arm: Node3D
 var cloak_tails: Array[MeshInstance3D] = []
 var walk_phase := 0.0
+var idle_phase := 0.0
+var long_hair: MeshInstance3D
 
 func _ready() -> void:
     robe = _mat(Color("#171c2b"), 0.9)
@@ -103,14 +105,27 @@ func _process(delta: float) -> void:
     var blend := clampf(horizontal_speed / 5.5, 0.0, 1.0)
     if blend > 0.03:
         walk_phase += delta * lerpf(5.0, 10.0, blend)
-    var swing := sin(walk_phase) * 0.48 * blend
+    else:
+        idle_phase += delta
+    var swing := sin(walk_phase) * 0.62 * blend
     left_leg.rotation.x = lerpf(left_leg.rotation.x, swing, delta * 10.0)
     right_leg.rotation.x = lerpf(right_leg.rotation.x, -swing, delta * 10.0)
-    left_arm.rotation.x = lerpf(left_arm.rotation.x, -swing * 0.6, delta * 8.0)
-    right_arm.rotation.x = lerpf(right_arm.rotation.x, swing * 0.6, delta * 8.0)
+    left_arm.rotation.x = lerpf(left_arm.rotation.x, -swing * 0.72, delta * 8.0)
+    right_arm.rotation.x = lerpf(right_arm.rotation.x, swing * 0.72, delta * 8.0)
+    var airborne := not actor.is_on_floor()
+    var jump_pose := 0.16 if airborne else 0.0
+    left_arm.rotation.z = lerpf(left_arm.rotation.z, jump_pose, delta * 7.0)
+    right_arm.rotation.z = lerpf(right_arm.rotation.z, -jump_pose, delta * 7.0)
+    var bob := sin(walk_phase * 2.0) * 0.045 * blend
+    position.y = lerpf(position.y, bob + clampf(actor.velocity.y * 0.006, -0.035, 0.035), delta * 12.0)
+    rotation.x = lerpf(rotation.x, -0.055 * blend + (0.04 if airborne else 0.0), delta * 8.0)
     for index in range(cloak_tails.size()):
         var tail := cloak_tails[index]
-        tail.rotation.z = sin(walk_phase * 0.7 + index) * 0.09 * blend
+        tail.rotation.z = sin(walk_phase * 0.75 + float(index)) * 0.15 * blend
+        tail.rotation.x = sin(walk_phase * 0.5 + float(index)) * 0.1 * blend
+    if long_hair:
+        long_hair.rotation.x = -0.18 + sin(walk_phase * 0.55 + idle_phase) * (0.12 if blend > 0.03 else 0.025)
+        long_hair.rotation.z = sin(walk_phase * 0.8 + idle_phase) * (0.09 if blend > 0.03 else 0.025)
 
 func _mat(color: Color, roughness: float) -> StandardMaterial3D:
     var material := StandardMaterial3D.new()

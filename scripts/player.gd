@@ -17,6 +17,7 @@ var facing := Vector3.FORWARD
 var dodge_direction := Vector3.FORWARD
 var dodge_cooldown := 0.0
 var jump_buffer := 0.0
+var checkpoint_position := Vector3.ZERO
 @export var jump_velocity := 8.0
 var attack_visual: Node3D
 var attack_tween: Tween
@@ -24,6 +25,7 @@ var attack_tween: Tween
 
 func _ready():
     qi = max_qi
+    checkpoint_position = global_position
     attack_visual = Node3D.new()
     add_child(attack_visual)
     var fist := MeshInstance3D.new()
@@ -41,6 +43,10 @@ func _ready():
     attack_visual.visible = false
 
 func _physics_process(delta):
+    if global_position.y < -6.0:
+        global_position = checkpoint_position
+        velocity = Vector3.ZERO
+        dodge_time = 0.0
     dodge_cooldown = maxf(0.0, dodge_cooldown - delta)
     attack_cooldown = maxf(0.0, attack_cooldown - delta)
     var input := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
@@ -78,6 +84,8 @@ func _physics_process(delta):
         $Mesh.rotation.y = lerp_angle($Mesh.rotation.y, atan2(-dir.x, -dir.z), 12.0 * delta)
     if not is_on_floor(): velocity.y -= 24.0 * delta
     move_and_slide()
+    if is_on_floor() and global_position.y > -1.0:
+        checkpoint_position = global_position
 
 func attack():
     if attack_cooldown > 0.0: return
@@ -118,4 +126,6 @@ func dodge() -> void:
         qi -= 15.0
         dodge_time = 0.22
         dodge_cooldown = 0.55
-        dodge_direction = facing
+        dodge_direction = -facing
+        if touch_move.length() > 0.12:
+            dodge_direction = facing

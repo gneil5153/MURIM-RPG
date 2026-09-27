@@ -47,6 +47,9 @@ func run() -> void:
         fail("Inner joystick should walk")
         return
     var walk_speed: float = Vector2(player.velocity.x, player.velocity.z).length()
+    if character_model.walk_phase < 0.2:
+        fail("Character did not animate while walking")
+        return
     var drag := InputEventScreenDrag.new()
     drag.index = 0
     drag.position = center + Vector2(0, -65)
@@ -95,8 +98,8 @@ func run() -> void:
         return
     for i in range(15):
         await physics_frame
-    if player.position.z > start.z - 2.0:
-        fail("Stationary dodge did not displace player")
+    if player.position.z < start.z + 2.0:
+        fail("Neutral joystick dodge should move backward")
         return
     for i in range(30):
         await physics_frame
@@ -108,16 +111,18 @@ func run() -> void:
         return
     touch(0, center, false)
     start = player.position
+    touch(0, center + Vector2(45, 0), true)
     touch(1, dodge_point, true)
     touch(1, dodge_point, false)
-    if controls.move_touch != -1 or player.touch_move.length() > 0.01:
-        fail("Released joystick did not clear movement input")
+    if controls.move_touch != 0 or player.touch_move.x < 0.5:
+        fail("Dodge touch interrupted the active joystick")
         return
     for i in range(15):
         await physics_frame
     if player.position.x < start.x + 2.0:
-        fail("Dodge did not preserve the last joystick direction after release")
+        fail("Dodge did not follow the active joystick direction")
         return
+    touch(0, center, false)
     touch(0, center + Vector2(45, 0), true)
     touch(2, attack_point, true)
     touch(2, attack_point, false)
@@ -173,5 +178,12 @@ func run() -> void:
     if player.position.y <= jump_start + 0.5:
         fail("Jump input did not lift player")
         return
-    print("PASS: orbit and pitch, pinch zoom, jump button and airborne movement actions")
+    var saved_checkpoint: Vector3 = player.checkpoint_position
+    player.global_position = Vector3(saved_checkpoint.x + 2.0, -7.0, saved_checkpoint.z)
+    player.velocity = Vector3.DOWN
+    await physics_frame
+    if player.global_position.y < saved_checkpoint.y - 0.1:
+        fail("Falling below the world did not return player to last safe ground")
+        return
+    print("PASS: backward neutral dodge, joystick-directed dodge, recovery after falling, animated character, camera zoom and jump")
     quit(0)
