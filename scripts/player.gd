@@ -137,7 +137,7 @@ func _setup_animations() -> void:
     var dirs := ["down", "up", "right", "left"]
     for row in range(dirs.size()):
         for ai in range(names.size()):
-            var animation_name := names[ai] + "_" + dirs[row]
+            var animation_name: String = names[ai] + "_" + dirs[row]
             frames.add_animation(animation_name)
             frames.set_animation_speed(animation_name, 9.0 if names[ai] == "walk" else 12.0)
             frames.set_animation_loop(animation_name, names[ai] in ["idle", "walk"])

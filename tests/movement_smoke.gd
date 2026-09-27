@@ -56,7 +56,7 @@ func run() -> void:
     touch(1,attack_point,false)
     player.attack_cooldown=0.0
     player.facing=Vector2.DOWN
-    var before_dodge := player.position
+    var before_dodge: Vector2 = player.position
     player.dodge()
     for i in range(10): await physics_frame
     if player.position.y <= before_dodge.y + 35:
