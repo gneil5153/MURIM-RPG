@@ -99,7 +99,7 @@ func run() -> void:
     if not player.special_visual.visible or player.special_cooldown <= 0.0 or player.qi != qi_before_special - 30.0:
         fail("Special button did not create the radiant attack and consume Qi")
         return
-    if dummy.health != 0.0 or second_dummy.get("health") != 23.0 or far_dummy.get("health") != 100.0 or absf(player.special_visual.max_radius - 324.0) > 1.0:
+    if dummy.health != 0.0 or second_dummy.get("health") != 23.0 or far_dummy.get("health") != 100.0 or absf(player.special_visual.max_radius - 324.0) > 1.0 or player.special_visual.bloom_count != 7:
         fail("Radiant special did not apply its three-character-height radius correctly")
         return
     touch(5, special_point, false)
