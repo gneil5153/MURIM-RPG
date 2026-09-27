@@ -29,12 +29,18 @@ var turn_lean := 0.0
 var dodge_lean := Vector2.ZERO
 var attack_visual: Node2D
 var special_visual: Node2D
+var ground_shadow: Node2D
 @onready var camera: Camera2D = $Camera2D
 @onready var sprite: AnimatedSprite2D = $Sprite
 
 func _ready() -> void:
     qi = max_qi
     _setup_animations()
+    ground_shadow = Node2D.new()
+    ground_shadow.name = "GroundShadow"
+    ground_shadow.z_index = -1
+    ground_shadow.set_script(load("res://scripts/character_shadow.gd"))
+    add_child(ground_shadow)
     attack_visual = Node2D.new()
     attack_visual.name = "Slash"
     attack_visual.z_index = 4
@@ -217,10 +223,14 @@ func _update_animation() -> void:
     var anim_name := state + "_" + direction_name
     if sprite.animation != anim_name:
         sprite.play(anim_name)
+    var lift := 0.0
     if jump_anim > 0.06:
         var progress := 1.0 - jump_anim / 0.48
-        sprite.position.y = -20.0 - sin(progress * PI) * 24.0
+        lift = sin(progress * PI) * 24.0
+        sprite.position.y = -20.0 - lift
         sprite.z_index = 2
     else:
         sprite.position.y = -20.0
         sprite.z_index = 0
+    if is_instance_valid(ground_shadow):
+        ground_shadow.call("set_lift", lift)

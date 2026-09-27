@@ -20,6 +20,16 @@ func _ready() -> void:
     for index in range(trees.size()):
         var tree := Node2D.new()
         tree.position = trees[index] * 2.0
+        var shadow := Polygon2D.new()
+        shadow.name = "Soft ground shade"
+        var points := PackedVector2Array()
+        for point_index in range(20):
+            var angle := TAU * float(point_index) / 20.0
+            points.append(Vector2(cos(angle) * 44.0, 10.0 + sin(angle) * 10.0))
+        shadow.polygon = points
+        shadow.color = Color(0.025, 0.035, 0.07, 0.24)
+        shadow.z_index = -1
+        tree.add_child(shadow)
         var art := Sprite2D.new()
         art.texture = atlas
         art.region_enabled = true

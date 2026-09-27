@@ -1,7 +1,7 @@
 extends Node2D
 
 var elapsed := 0.0
-var duration := 0.72
+var duration := 0.86
 var max_radius := 0.0
 var bloom_count := 7
 
@@ -25,51 +25,60 @@ func _process(delta: float) -> void:
 
 func _draw() -> void:
     var progress := clampf(elapsed / duration, 0.0, 1.0)
-    var radius := lerpf(12.0, max_radius, progress)
-    var alpha := 1.0 - progress
-    var burst := clampf((progress - 0.08) / 0.82, 0.0, 1.0)
+    var growth := ease(progress, 0.62)
+    var fade := pow(1.0 - progress, 1.18)
+    var radius := lerpf(12.0, max_radius, growth)
+    var settle := clampf((progress - 0.14) / 0.66, 0.0, 1.0)
 
-    # Expanding golden Geo field and its cool, luminous inner edge.
-    draw_circle(Vector2.ZERO, radius * 0.84, Color(1.0, 0.72, 0.20, alpha * 0.075))
-    draw_arc(Vector2.ZERO, radius, 0.0, TAU, 56, Color(1.0, 0.82, 0.34, alpha), 7.0, false)
-    draw_arc(Vector2.ZERO, radius * 0.92, 0.0, TAU, 52, Color(0.65, 0.92, 1.0, alpha * 0.82), 3.0, false)
+    draw_circle(Vector2.ZERO, radius * 0.79, Color(1.0, 0.57, 0.19, fade * 0.035))
+    draw_circle(Vector2.ZERO, radius * 0.49, Color(1.0, 0.77, 0.32, fade * 0.055))
+    draw_circle(Vector2.ZERO, radius * 0.22, Color(1.0, 0.9, 0.58, fade * 0.11))
+    draw_circle(Vector2.ZERO, radius * 0.075, Color(1.0, 0.99, 0.84, fade * 0.34))
 
-    # Faceted light rays spread from the character as the shockwave grows.
-    for ray in range(16):
-        var angle := TAU * float(ray) / 16.0
-        var direction := Vector2(cos(angle), sin(angle))
-        draw_line(direction * radius * 0.48, direction * radius * 0.86, Color(1.0, 0.94, 0.69, alpha * 0.78), 3.0, false)
+    var ring_radius := radius * lerpf(0.89, 1.0, settle)
+    _soft_arc(ring_radius, 0.0, TAU, Color(1.0, 0.71, 0.31), fade, 7.5)
+    _soft_arc(ring_radius * 0.94, 0.0, TAU, Color(1.0, 0.91, 0.63), fade * 0.8, 3.0)
+    _soft_arc(radius * 0.74, 0.0, TAU, Color(0.83, 0.91, 1.0), fade * 0.40, 2.5)
 
-    # Seven Geo crystal blossoms flare around the perimeter.
-    var bloom_radius := radius * lerpf(0.34, 0.74, burst)
     for bloom in range(bloom_count):
         var angle := -PI * 0.5 + TAU * float(bloom) / float(bloom_count)
         var direction := Vector2(cos(angle), sin(angle))
-        var center := direction * bloom_radius
-        var size := lerpf(0.52, 1.12, burst)
-        _draw_crystal(center, angle, size, alpha)
         var side := direction.rotated(PI * 0.5)
-        _draw_crystal(center + side * 13.0 * size, angle - 0.28, size * 0.56, alpha * 0.88)
-        _draw_crystal(center - side * 13.0 * size, angle + 0.28, size * 0.56, alpha * 0.88)
+        var reach := radius * lerpf(0.74, 0.91, float((bloom * 3) % bloom_count) / float(bloom_count))
+        var bend := 18.0 + float((bloom * 5) % 4) * 8.0
+        var points := PackedVector2Array()
+        var start := direction * radius * 0.07
+        var control := direction * reach * 0.55 + side * bend
+        var finish := direction * reach
+        for sample in range(13):
+            var t := float(sample) / 12.0
+            var inverse := 1.0 - t
+            points.append(start * inverse * inverse + control * 2.0 * inverse * t + finish * t * t)
+        _soft_ribbon(points, Color(1.0, 0.68 + float(bloom % 3) * 0.07, 0.28), fade, lerpf(20.0, 9.0, progress))
+        _soft_ribbon(points, Color(1.0, 0.93, 0.68), fade * 0.78, lerpf(5.5, 2.0, progress))
 
-    # A compact alchemy-star flash remains visible beneath the player.
-    draw_arc(Vector2.ZERO, radius * 0.16, 0.0, TAU, 28, Color(1.0, 0.9, 0.54, alpha), 3.0, false)
-    for ray in range(8):
-        var angle := TAU * float(ray) / 8.0
-        var direction := Vector2(cos(angle), sin(angle))
-        draw_line(direction * radius * 0.035, direction * radius * 0.15, Color(1.0, 0.98, 0.82, alpha), 2.0, false)
-    draw_circle(Vector2.ZERO, 17.0 * alpha, Color(1.0, 0.99, 0.84, alpha * 0.8))
+        var petal := direction * radius * lerpf(0.67, 0.78, settle) + side * bend * 0.45
+        var petal_size := maxf(2.5, 12.0 * (1.0 - progress * 0.45))
+        draw_circle(petal, petal_size * 2.4, Color(1.0, 0.64, 0.23, fade * 0.13))
+        draw_circle(petal, petal_size, Color(1.0, 0.88, 0.53, fade * 0.45))
+        draw_circle(petal, petal_size * 0.38, Color(1.0, 0.98, 0.82, fade * 0.7))
 
-func _draw_crystal(center: Vector2, angle: float, scale: float, alpha: float) -> void:
-    var shape := PackedVector2Array([
-        Vector2(0, -20), Vector2(7, -5), Vector2(6, 9),
-        Vector2(0, 21), Vector2(-6, 9), Vector2(-7, -5)
-    ])
-    var points := PackedVector2Array()
-    for point in shape:
-        points.append(center + point.rotated(angle) * scale)
-    draw_colored_polygon(points, Color(0.9, 0.63, 0.2, alpha * 0.78))
-    var outline := points.duplicate()
-    outline.append(points[0])
-    draw_polyline(outline, Color(1.0, 0.96, 0.73, alpha), 2.0, false)
-    draw_line(points[0], points[3], Color(1.0, 0.98, 0.86, alpha * 0.86), 2.0, false)
+    for spark in range(18):
+        var angle := float(spark) * 2.399 + progress * 1.7
+        var distance := radius * (0.22 + 0.58 * float((spark * 7) % 19) / 18.0)
+        var point := Vector2(cos(angle), sin(angle)) * distance
+        var size := (1.5 + float(spark % 4)) * (1.0 - progress * 0.45)
+        draw_circle(point, size * 2.0, Color(1.0, 0.78, 0.42, fade * 0.10))
+        draw_circle(point, size, Color(1.0, 0.97, 0.78, fade * 0.55))
+    _soft_arc(radius * 0.18, 0.0, TAU * 0.72, Color(1.0, 0.98, 0.8), fade, 2.2)
+
+func _soft_arc(radius: float, start: float, finish: float, tint: Color, alpha: float, width: float) -> void:
+    draw_arc(Vector2.ZERO, radius, start, finish, 64, Color(tint.r, tint.g, tint.b, alpha * 0.075), width * 4.0, false)
+    draw_arc(Vector2.ZERO, radius, start, finish, 64, Color(tint.r, tint.g, tint.b, alpha * 0.20), width * 2.0, false)
+    draw_arc(Vector2.ZERO, radius, start, finish, 64, Color(tint.r, tint.g, tint.b, alpha * 0.52), width, false)
+    draw_arc(Vector2.ZERO, radius, start, finish, 64, Color(1.0, 0.99, 0.9, alpha * 0.78), maxf(1.0, width * 0.27), false)
+
+func _soft_ribbon(points: PackedVector2Array, tint: Color, alpha: float, width: float) -> void:
+    draw_polyline(points, Color(tint.r, tint.g, tint.b, alpha * 0.075), width * 3.8, false)
+    draw_polyline(points, Color(tint.r, tint.g, tint.b, alpha * 0.19), width * 2.0, false)
+    draw_polyline(points, Color(tint.r, tint.g, tint.b, alpha * 0.48), width, false)

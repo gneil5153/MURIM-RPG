@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3]
+[gd_scene load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/player.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/world_2d.gd" id="2"]
@@ -10,6 +10,12 @@ radius = 11.0
 
 [sub_resource type="Theme" id="HudTheme"]
 default_font_size = 22
+
+[sub_resource type="Shader" id="CharacterVolumeShader"]
+code = "shader_type canvas_item;\nvoid fragment() {\n    vec4 texel = texture(TEXTURE, UV);\n    float top_light = 1.0 - UV.y;\n    float side_shade = smoothstep(0.16, 0.96, UV.x);\n    float light = 0.79 + top_light * 0.15 + (1.0 - side_shade) * 0.09;\n    COLOR = vec4(texel.rgb * light, texel.a) * COLOR;\n}"
+
+[sub_resource type="ShaderMaterial" id="CharacterVolumeMaterial"]
+shader = SubResource("CharacterVolumeShader")
 
 [node name="MurimPixel" type="Node2D"]
 y_sort_enabled = true
@@ -26,6 +32,7 @@ script = ExtResource("1")
 [node name="Sprite" type="AnimatedSprite2D" parent="Player"]
 position = Vector2(0, -20)
 scale = Vector2(1.5, 1.5)
+material = SubResource("CharacterVolumeMaterial")
 
 [node name="Collision" type="CollisionShape2D" parent="Player"]
 shape = SubResource("PlayerShape")
