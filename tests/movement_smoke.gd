@@ -25,6 +25,13 @@ func run() -> void:
     if player is not CharacterBody2D or player.sprite.sprite_frames.get_animation_names().size() < 20:
         fail("Pixel character animations did not load")
         return
+    var sheet: Image = Image.load_from_file("res://assets/pixel/hero_sheet.png")
+    for row in range(4):
+        for y in range(3):
+            for x in range(sheet.get_width()):
+                if sheet.get_pixel(x, row * 72 + y).a > 0.01:
+                    fail("Sprite frame contains a detached fragment above the character")
+                    return
     var center: Vector2 = controls.get_global_transform_with_canvas() * controls.stick_center()
     var start: Vector2 = player.position
     touch(0, center + Vector2(0,-40), true)

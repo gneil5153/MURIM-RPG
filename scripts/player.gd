@@ -115,7 +115,7 @@ func attack() -> void:
         combo_step = (combo_step + 1) % 3
     last_attack_time = now
     attack_cooldown = 0.34
-    attack_anim = 1.05
+    attack_anim = 1.35
     _show_slash()
     if combo_step == 2:
         for candidate in get_tree().get_nodes_in_group("damageable"):
@@ -156,6 +156,9 @@ func _show_slash() -> void:
     attack_visual.rotation = facing.angle() + PI * 0.5
     attack_visual.visible = true
     attack_visual.call("restart", combo_step)
+    if sprite.animation.begins_with("attack_"):
+        sprite.set_frame_and_progress(0, 0.0)
+        sprite.play()
 
 func dodge() -> void:
     if dodge_cooldown > 0.0 or qi < 12.0:
@@ -180,7 +183,8 @@ func _setup_animations() -> void:
     var frames := SpriteFrames.new()
     frames.clear_all()
     var names := ["idle", "walk", "attack", "dodge", "jump"]
-    var dirs := ["down", "up", "right", "left"]
+    # The art rows are front, side, back and the opposite side.
+    var dirs := ["down", "right", "up", "left"]
     for row in range(dirs.size()):
         for ai in range(names.size()):
             var animation_name: String = names[ai] + "_" + dirs[row]
@@ -202,7 +206,7 @@ func _update_animation(delta: float = 1.0 / 60.0) -> void:
     sprite.flip_h = false
     if absf(facing.x) > absf(facing.y):
         direction_name = "right"
-        sprite.flip_h = facing.x < 0.0
+        sprite.flip_h = facing.x > 0.0
     elif facing.y < 0.0:
         direction_name = "down"
     var speed := velocity.length()
