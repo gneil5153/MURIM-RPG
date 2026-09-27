@@ -133,7 +133,7 @@ func dodge() -> void:
         qi -= 15.0
         dodge_time = 0.22
         dodge_cooldown = 0.55
-        var body_forward := -$Mesh.global_transform.basis.z
+        var body_forward: Vector3 = -$Mesh.global_transform.basis.z
         body_forward.y = 0.0
         body_forward = body_forward.normalized()
         dodge_direction = stick_world_direction if stick_active else -body_forward

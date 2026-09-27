@@ -110,10 +110,10 @@ func run() -> void:
         player.dodge_cooldown = 0.0
         player.facing = Vector3.FORWARD
         player.get_node("Mesh").rotation = Vector3.ZERO
-        var expected_forward := -player.camera_pivot.global_transform.basis.z
+        var expected_forward: Vector3 = -player.camera_pivot.global_transform.basis.z
         expected_forward.y = 0.0
         expected_forward = expected_forward.normalized()
-        var expected_right := player.camera_pivot.global_transform.basis.x
+        var expected_right: Vector3 = player.camera_pivot.global_transform.basis.x
         expected_right.y = 0.0
         expected_right = expected_right.normalized()
         var expected_direction: Vector3 = (expected_right * stick_direction.x - expected_forward * stick_direction.y).normalized()
