@@ -3,67 +3,49 @@ name: Build Android APK
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   export:
     runs-on: ubuntu-latest
     container: barichello/godot-ci:4.4
 
-    env:
-      GODOT_ANDROID_KEYSTORE_DEBUG_PATH: /root/.android/debug.keystore
-      GODOT_ANDROID_KEYSTORE_DEBUG_USER: androiddebugkey
-      GODOT_ANDROID_KEYSTORE_DEBUG_PASSWORD: android
-
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup export templates
+      - name: Configure Android debug signing
         run: |
-          mkdir -p ~/.local/share/godot/export_templates
-          mv /root/.local/share/godot/export_templates/4.4.stable \
-             ~/.local/share/godot/export_templates/4.4.stable || true
+          mkdir -p /root/.android /root/.config/godot
+          keytool -genkeypair -v -keystore /root/.android/debug.keystore \
+            -storepass android -alias androiddebugkey -keypass android \
+            -keyalg RSA -keysize 2048 -validity 10000 \
+            -dname "CN=Android Debug,O=Android,C=US"
 
-      - name: Configure Android
-        run: |
-          mkdir -p /root/.android
-          mkdir -p /root/.config/godot
-
-          keytool -keyalg RSA \
-            -genkeypair \
-            -alias androiddebugkey \
-            -keypass android \
-            -keystore /root/.android/debug.keystore \
-            -storepass android \
-            -dname "CN=Android Debug,O=Android,C=US" \
-            -validity 10000
-
-          JAVA_BIN="$(command -v java)"
-          JAVA_HOME_DIR="$(dirname "$(dirname "$(readlink -f "$JAVA_BIN")")")"
-
-          cat > /root/.config/godot/editor_settings-4.tres <<EOF
+          # Godot 4.4 reads editor_settings-4.4.tres.
+          cat > /root/.config/godot/editor_settings-4.4.tres <<EOF
           [gd_resource type="EditorSettings" format=3]
 
           [resource]
-
           export/android/android_sdk_path = "$ANDROID_HOME"
-          export/android/java_sdk_path = "$JAVA_HOME_DIR"
+          export/android/java_sdk_path = "/usr/lib/jvm/java-17-openjdk-amd64"
           export/android/debug_keystore = "/root/.android/debug.keystore"
           export/android/debug_keystore_user = "androiddebugkey"
           export/android/debug_keystore_pass = "android"
           EOF
+          test -x /usr/lib/jvm/java-17-openjdk-amd64/bin/javac
 
-          echo "JAVA_HOME_DIR=$JAVA_HOME_DIR"
-          echo "ANDROID_HOME=$ANDROID_HOME"
-          ls -l /root/.android/debug.keystore
+      - name: Import project
+        run: godot --headless --path . --import
 
       - name: Export APK
         run: |
           mkdir -p build
-          godot --headless --export-debug "Android" build/MurimRPG.apk
+          godot --headless --path . --export-debug "Android" build/MurimRPG.apk
+          test -s build/MurimRPG.apk
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: MurimRPG-Android
           path: build/MurimRPG.apk
+          if-no-files-found: error

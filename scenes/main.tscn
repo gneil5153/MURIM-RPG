@@ -1,0 +1,82 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource path="res://scripts/player.gd" type="Script" id="1"]
+[ext_resource path="res://scripts/world_streamer.gd" type="Script" id="2"]
+[ext_resource path="res://scripts/touch_controls.gd" type="Script" id="3"]
+[sub_resource type="BoxMesh" id="Box"]
+size = Vector3(1,2,1)
+[sub_resource type="BoxShape3D" id="PlayerShape"]
+size = Vector3(1,2,1)
+[sub_resource type="BoxMesh" id="GroundMesh"]
+size = Vector3(120,0.3,120)
+[sub_resource type="BoxShape3D" id="GroundShape"]
+size = Vector3(120,0.3,120)
+
+[node name="MurimPrototype" type="Node3D"]
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+[node name="Sun" type="DirectionalLight3D" parent="."]
+rotation_degrees = Vector3(-55,-25,0)
+shadow_enabled = true
+[node name="Ground" type="StaticBody3D" parent="."]
+[node name="Mesh" type="MeshInstance3D" parent="Ground"]
+mesh = SubResource("GroundMesh")
+[node name="Collision" type="CollisionShape3D" parent="Ground"]
+shape = SubResource("GroundShape")
+[node name="Player" type="CharacterBody3D" parent="."]
+position = Vector3(0,2,0)
+script = ExtResource("1")
+[node name="Mesh" type="MeshInstance3D" parent="Player"]
+mesh = SubResource("Box")
+[node name="Collision" type="CollisionShape3D" parent="Player"]
+shape = SubResource("PlayerShape")
+[node name="CameraPivot" type="Node3D" parent="Player"]
+position = Vector3(0,1.5,0)
+[node name="Camera3D" type="Camera3D" parent="Player/CameraPivot"]
+position = Vector3(0,3.5,7)
+rotation_degrees = Vector3(-18,180,0)
+current = true
+[node name="WorldStreamer" type="Node3D" parent="."]
+script = ExtResource("2")
+player = NodePath("../Player")
+
+[node name="AttackArea" type="Area3D" parent="Player"]
+position = Vector3(0,1,-1.6)
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Player/AttackArea"]
+shape = SubResource("PlayerShape")
+
+[node name="HUD" type="CanvasLayer" parent="."]
+[node name="TouchControls" type="Control" parent="HUD"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("3")
+player_path = NodePath("../../Player")
+
+[node name="Attack" type="Button" parent="HUD/TouchControls"]
+offset_left = 1080.0
+offset_top = 520.0
+offset_right = 1250.0
+offset_bottom = 690.0
+text = "ATAQUE"
+
+[node name="Dodge" type="Button" parent="HUD/TouchControls"]
+offset_left = 900.0
+offset_top = 570.0
+offset_right = 1040.0
+offset_bottom = 700.0
+text = "ESQUIVA"
+
+[node name="Sprint" type="Button" parent="HUD/TouchControls"]
+offset_left = 1080.0
+offset_top = 390.0
+offset_right = 1240.0
+offset_bottom = 500.0
+text = "CORRER"
+
+[connection signal="pressed" from="HUD/TouchControls/Attack" to="HUD/TouchControls" method="_on_attack_pressed"]
+[connection signal="pressed" from="HUD/TouchControls/Dodge" to="HUD/TouchControls" method="_on_dodge_pressed"]
+[connection signal="button_down" from="HUD/TouchControls/Sprint" to="HUD/TouchControls" method="_on_sprint_button_down"]
+[connection signal="button_up" from="HUD/TouchControls/Sprint" to="HUD/TouchControls" method="_on_sprint_button_up"]
