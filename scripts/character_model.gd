@@ -10,6 +10,8 @@ var leather: StandardMaterial3D
 var eyes: StandardMaterial3D
 var left_leg: Node3D
 var right_leg: Node3D
+var left_knee: Node3D
+var right_knee: Node3D
 var left_arm: Node3D
 var right_arm: Node3D
 var cloak_tails: Array[MeshInstance3D] = []
@@ -31,12 +33,10 @@ func _ready() -> void:
     var skirt := CylinderMesh.new()
     skirt.top_radius = 0.29
     skirt.bottom_radius = 0.48
-    skirt.height = 1.18
+    skirt.height = 0.9
     skirt.radial_segments = 16
-    _piece(self, "Long outer robe", skirt, Vector3(0, 0.91, 0), robe)
+    _piece(self, "Long outer robe", skirt, Vector3(0, 0.72, 0), robe)
     _piece(self, "Inner tunic", _capsule(0.27, 1.05), Vector3(0, 1.41, 0), inner)
-    _piece(self, "Left robe panel", _box(Vector3(0.26, 0.92, 0.09)), Vector3(-0.14, 0.86, -0.342), robe_light, Vector3.ONE, Vector3(0, 0, -0.07))
-    _piece(self, "Right robe panel", _box(Vector3(0.26, 0.92, 0.09)), Vector3(0.14, 0.86, -0.342), robe_light, Vector3.ONE, Vector3(0, 0, 0.07))
     _piece(self, "Blue hanging sash", _box(Vector3(0.12, 0.9, 0.07)), Vector3(0.22, 0.79, -0.402), inner, Vector3.ONE, Vector3(0, 0, -0.12))
 
     var belt := CylinderMesh.new()
@@ -57,20 +57,34 @@ func _ready() -> void:
         for mark in range(3):
             _piece(self, "Shoulder stitch", _sphere(0.025), Vector3(side * (0.28 + mark * 0.09), 1.84, -0.275), trim)
 
-    # Trousers, wrapped boots and wide sleeves.
-    left_leg = _limb("Left leg", Vector3(-0.16, 0.67, 0), 0.15, 0.7, leather)
-    right_leg = _limb("Right leg", Vector3(0.16, 0.67, 0), 0.15, 0.7, leather)
-    _piece(left_leg, "Left boot", _box(Vector3(0.25, 0.2, 0.38)), Vector3(0, -0.53, -0.07), leather)
-    _piece(right_leg, "Right boot", _box(Vector3(0.25, 0.2, 0.38)), Vector3(0, -0.53, -0.07), leather)
-    _piece(left_leg, "Left boot wrap", _box(Vector3(0.29, 0.11, 0.34)), Vector3(0, -0.39, -0.06), trim)
-    _piece(right_leg, "Right boot wrap", _box(Vector3(0.29, 0.11, 0.34)), Vector3(0, -0.39, -0.06), trim)
+    # Two-part legs let the knees and boots follow each stride visibly.
+    left_leg = _limb("Left leg", Vector3(-0.17, 0.76, 0), 0.13, 0.58, leather)
+    right_leg = _limb("Right leg", Vector3(0.17, 0.76, 0), 0.13, 0.58, leather)
+    _piece(left_leg, "Left split robe panel", _box(Vector3(0.24, 0.84, 0.055)), Vector3(0.045, 0.12, -0.46), robe_light, Vector3.ONE, Vector3(0, 0, -0.06))
+    _piece(right_leg, "Right split robe panel", _box(Vector3(0.24, 0.84, 0.055)), Vector3(-0.045, 0.12, -0.46), robe_light, Vector3.ONE, Vector3(0, 0, 0.06))
+    left_knee = Node3D.new()
+    left_knee.name = "Left knee"
+    left_knee.position = Vector3(0, -0.27, 0)
+    left_leg.add_child(left_knee)
+    right_knee = Node3D.new()
+    right_knee.name = "Right knee"
+    right_knee.position = Vector3(0, -0.27, 0)
+    right_leg.add_child(right_knee)
+    _piece(left_knee, "Left shin", _capsule(0.105, 0.46), Vector3(0, -0.16, 0), leather)
+    _piece(right_knee, "Right shin", _capsule(0.105, 0.46), Vector3(0, -0.16, 0), leather)
+    _piece(left_knee, "Left boot", _box(Vector3(0.25, 0.2, 0.4)), Vector3(0, -0.4, -0.08), leather)
+    _piece(right_knee, "Right boot", _box(Vector3(0.25, 0.2, 0.4)), Vector3(0, -0.4, -0.08), leather)
+    _piece(left_knee, "Left boot wrap", _box(Vector3(0.28, 0.1, 0.35)), Vector3(0, -0.29, -0.06), trim)
+    _piece(right_knee, "Right boot wrap", _box(Vector3(0.28, 0.1, 0.35)), Vector3(0, -0.29, -0.06), trim)
 
-    left_arm = _limb("Left sleeve", Vector3(-0.37, 1.72, 0), 0.17, 0.76, robe_light)
-    right_arm = _limb("Right sleeve", Vector3(0.37, 1.72, 0), 0.17, 0.76, robe_light)
-    left_arm.get_child(0).rotation.z = PI * 0.5
-    right_arm.get_child(0).rotation.z = -PI * 0.5
-    _piece(self, "Left hand", _sphere(0.12), Vector3(-0.48, 1.19, -0.02), skin)
-    _piece(self, "Right hand", _sphere(0.12), Vector3(0.48, 1.19, -0.02), skin)
+    # Sleeves hang from the shoulders; hands are children so they cannot float
+    # in place while the arms swing.
+    left_arm = _limb("Left sleeve", Vector3(-0.43, 1.72, 0), 0.16, 0.68, robe_light)
+    right_arm = _limb("Right sleeve", Vector3(0.43, 1.72, 0), 0.16, 0.68, robe_light)
+    _piece(left_arm, "Left hand", _sphere(0.12), Vector3(0, -0.43, -0.025), skin)
+    _piece(right_arm, "Right hand", _sphere(0.12), Vector3(0, -0.43, -0.025), skin)
+    _piece(left_arm, "Left cuff", _box(Vector3(0.31, 0.1, 0.31)), Vector3(0, -0.31, 0), inner)
+    _piece(right_arm, "Right cuff", _box(Vector3(0.31, 0.1, 0.31)), Vector3(0, -0.31, 0), inner)
     for side in [-1.0, 1.0]:
         _piece(self, "Sleeve cuff", _capsule(0.19, 0.18), Vector3(side * 0.72, 1.72, 0), inner, Vector3.ONE, Vector3(0, 0, side * PI * 0.5))
 
@@ -128,23 +142,29 @@ func _process(delta: float) -> void:
         return
     var horizontal_speed := Vector2(actor.velocity.x, actor.velocity.z).length()
     var blend := clampf(horizontal_speed / 10.5, 0.0, 1.0)
-    if blend > 0.03:
-        walk_phase += delta * lerpf(5.0, 10.0, blend)
+    var gait_strength := clampf(horizontal_speed / 7.0, 0.0, 1.0)
+    if gait_strength > 0.03:
+        walk_phase += delta * lerpf(4.4, 9.5, blend)
     else:
         idle_phase += delta
-    var swing := sin(walk_phase) * lerpf(0.48, 0.9, blend) * blend
+    var stride := sin(walk_phase)
+    var swing := stride * lerpf(0.7, 1.05, blend) * gait_strength
     var airborne := not actor.is_on_floor()
     var rising := clampf(actor.velocity.y / 8.0, 0.0, 1.0) if airborne else 0.0
     var landing: float = actor.get("landing_impact")
     var attack: float = actor.get("attack_anim")
     var attack_phase := sin((1.0 - attack) * PI) if attack > 0.0 else 0.0
     var jump_pose := 0.2 * rising
-    left_leg.rotation.x = lerpf(left_leg.rotation.x, swing - jump_pose + landing * 0.52, delta * 12.0)
-    right_leg.rotation.x = lerpf(right_leg.rotation.x, -swing - jump_pose + landing * 0.52, delta * 12.0)
-    left_arm.rotation.x = lerpf(left_arm.rotation.x, -swing * 0.82 - attack_phase * 0.55, delta * 10.0)
-    right_arm.rotation.x = lerpf(right_arm.rotation.x, swing * 0.82 - attack_phase * 1.65, delta * 14.0)
-    left_arm.rotation.z = lerpf(left_arm.rotation.z, jump_pose + landing * 0.18, delta * 9.0)
-    right_arm.rotation.z = lerpf(right_arm.rotation.z, -jump_pose - attack_phase * 0.2, delta * 12.0)
+    left_leg.rotation.x = lerpf(left_leg.rotation.x, swing - jump_pose + landing * 0.52, delta * 16.0)
+    right_leg.rotation.x = lerpf(right_leg.rotation.x, -swing - jump_pose + landing * 0.52, delta * 16.0)
+    var left_kick := maxf(0.0, -stride) * lerpf(0.52, 1.05, blend) * gait_strength
+    var right_kick := maxf(0.0, stride) * lerpf(0.52, 1.05, blend) * gait_strength
+    left_knee.rotation.x = lerpf(left_knee.rotation.x, left_kick + jump_pose * 1.5, delta * 18.0)
+    right_knee.rotation.x = lerpf(right_knee.rotation.x, right_kick + jump_pose * 1.5, delta * 18.0)
+    left_arm.rotation.x = lerpf(left_arm.rotation.x, -swing * 1.05 - attack_phase * 0.55, delta * 13.0)
+    right_arm.rotation.x = lerpf(right_arm.rotation.x, swing * 1.05 - attack_phase * 1.8, delta * 16.0)
+    left_arm.rotation.z = lerpf(left_arm.rotation.z, jump_pose + sin(walk_phase + PI * 0.5) * 0.1 * gait_strength + landing * 0.18, delta * 11.0)
+    right_arm.rotation.z = lerpf(right_arm.rotation.z, -jump_pose + sin(walk_phase + PI * 0.5) * -0.1 * gait_strength - attack_phase * 0.2, delta * 12.0)
     var bob := sin(walk_phase * 2.0) * lerpf(0.018, 0.065, blend) * blend
     bob += sin(idle_phase * 2.0) * 0.012 * (1.0 - blend)
     position.y = lerpf(position.y, bob + clampf(actor.velocity.y * 0.006, -0.035, 0.035) - landing * 0.1, delta * 12.0)

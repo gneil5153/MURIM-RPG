@@ -50,6 +50,9 @@ func run() -> void:
     if character_model.walk_phase < 0.2:
         fail("Character did not animate while walking")
         return
+    if absf(character_model.left_arm.rotation.x) < 0.05 or absf(character_model.right_leg.rotation.x) < 0.05 or character_model.left_knee == null or character_model.right_knee == null:
+        fail("Visible arm swing, leg stride, and articulated knees must animate while walking")
+        return
     var drag := InputEventScreenDrag.new()
     drag.index = 0
     drag.position = center + Vector2(0, -46)
@@ -88,7 +91,7 @@ func run() -> void:
     if player.touch_move.length() > 0.01 or player.touch_sprinting or Vector2(player.velocity.x, player.velocity.z).length() > 0.05:
         fail("Release did not stop player")
         return
-    print("PASS: joystick extension scales speed; sprint and turns blend smoothly; independent fingers; release brakes")
+    print("PASS: arms, legs, knees and robe panels move; joystick speed, turns and braking blend smoothly")
     player.position = Vector3(0, 0.05, 0)
     player.velocity = Vector3.ZERO
     player.facing = Vector3.FORWARD
