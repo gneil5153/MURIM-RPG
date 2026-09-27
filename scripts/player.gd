@@ -21,6 +21,7 @@ var special_anim := 0.0
 var special_cooldown := 0.0
 var combo_step := 0
 var last_attack_time := -10.0
+var walk_phase := 0.0
 var jump_buffer := 0.0
 var jump_held := false
 var jump_anim := 0.0
@@ -99,7 +100,7 @@ func _physics_process(delta: float) -> void:
     move_and_slide()
     if jump_anim <= 0.0 and sprite.position.y < -1.0:
         landing_impact = 0.35
-    _update_animation()
+    _update_animation(delta)
 
 func set_move_vector(value: Vector2) -> void:
     touch_move = value.limit_length(1.0)
@@ -114,7 +115,7 @@ func attack() -> void:
         combo_step = (combo_step + 1) % 3
     last_attack_time = now
     attack_cooldown = 0.34
-    attack_anim = 0.9 if combo_step == 1 else (1.0 if combo_step == 2 else 0.8)
+    attack_anim = 1.05
     _show_slash()
     if combo_step == 2:
         for candidate in get_tree().get_nodes_in_group("damageable"):
@@ -184,7 +185,7 @@ func _setup_animations() -> void:
         for ai in range(names.size()):
             var animation_name: String = names[ai] + "_" + dirs[row]
             frames.add_animation(animation_name)
-            frames.set_animation_speed(animation_name, 9.0 if names[ai] == "walk" else 12.0)
+            frames.set_animation_speed(animation_name, 14.0 if names[ai] == "attack" else (10.5 if names[ai] == "walk" else 12.0))
             frames.set_animation_loop(animation_name, names[ai] in ["idle", "walk"])
             for frame_index in range(4):
                 var atlas := AtlasTexture.new()
@@ -196,7 +197,7 @@ func _setup_animations() -> void:
     sprite.animation = "idle_down"
     sprite.play()
 
-func _update_animation() -> void:
+func _update_animation(delta: float = 1.0 / 60.0) -> void:
     var direction_name := "up"
     sprite.flip_h = false
     if absf(facing.x) > absf(facing.y):
@@ -210,8 +211,9 @@ func _update_animation() -> void:
         state = "jump"
     elif dodge_time > 0.0 or (dodge_cooldown > 0.39 and dodge_cooldown < 0.62):
         state = "dodge"
-    elif attack_anim > 0.47:
+    elif attack_anim > 0.0:
         state = "attack"
+        sprite.speed_scale = 1.0
     elif speed > run_speed * 0.72:
         state = "walk"
         sprite.speed_scale = 1.35
@@ -223,12 +225,24 @@ func _update_animation() -> void:
     var anim_name := state + "_" + direction_name
     if sprite.animation != anim_name:
         sprite.play(anim_name)
+    if state == "walk":
+        var gait_rate := 13.0 if speed > run_speed * 0.72 else 9.5
+        walk_phase = fposmod(walk_phase + delta * gait_rate, TAU)
+        var stride := sin(walk_phase)
+        sprite.position.x = stride * 2.8
+        sprite.rotation = stride * 0.075
+    else:
+        sprite.position.x = 0.0
+        sprite.rotation = 0.0
     var lift := 0.0
     if jump_anim > 0.06:
         var progress := 1.0 - jump_anim / 0.48
         lift = sin(progress * PI) * 24.0
         sprite.position.y = -20.0 - lift
         sprite.z_index = 2
+    elif state == "walk":
+        sprite.position.y = -20.0 - absf(sin(walk_phase)) * 3.2
+        sprite.z_index = 0
     else:
         sprite.position.y = -20.0
         sprite.z_index = 0

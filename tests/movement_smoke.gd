@@ -32,6 +32,9 @@ func run() -> void:
     if player.position.y >= start.y - 18 or not player.sprite.animation.begins_with("walk_down"):
         fail("Joystick did not move and animate the pixel character")
         return
+    if absf(player.sprite.rotation) < 0.025 or player.sprite.position.y > -20.5:
+        fail("Walk cycle did not show a visible body stride")
+        return
     if player.acceleration != 1812.5 or player.braking != 2187.5:
         fail("Movement acceleration and braking are not 25 percent firmer")
         return
@@ -73,6 +76,10 @@ func run() -> void:
         fail("Attack did not animate and damage the training target")
         return
     touch(1,attack_point,false)
+    for i in range(10): await physics_frame
+    if not player.sprite.animation.begins_with("attack_down") or player.sprite.frame < 2:
+        fail("The attack did not visibly play the sword draw animation")
+        return
     var after_first_attack: float = dummy.health
     player.attack_cooldown = 0.0
     player.attack()
