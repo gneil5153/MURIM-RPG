@@ -31,8 +31,8 @@ func run() -> void:
     var player = world.get_node("Player")
     var dummy = world.get_node("TrainingDummy")
     var character_model = player.get_node("Mesh")
-    if character_model.get_child_count() < 30 or character_model.get_node_or_null("Hair cap") == null or character_model.get_node_or_null("Hair ribbon") == null or character_model.get_node_or_null("Sword sheath") == null or character_model.left_elbow == null or character_model.right_elbow == null:
-        fail("Stylized wuxia character model was not built")
+    if character_model.skeleton == null or character_model.animation_player == null or character_model.skeleton.find_bone("Head") < 0 or character_model.animation_player.get_animation_list().size() < 5:
+        fail("Skinned character and its animations did not load")
         return
     dummy.position.x = 20.0
     var center: Vector2 = controls.get_global_transform_with_canvas() * controls.stick_center()
@@ -47,11 +47,8 @@ func run() -> void:
         fail("Inner joystick should walk")
         return
     var walk_speed: float = Vector2(player.velocity.x, player.velocity.z).length()
-    if character_model.walk_phase < 0.2:
-        fail("Character did not animate while walking")
-        return
-    if absf(character_model.left_arm.rotation.x) < 0.05 or absf(character_model.right_leg.rotation.x) < 0.05 or character_model.left_knee == null or character_model.right_knee == null:
-        fail("Visible arm swing, leg stride, and articulated knees must animate while walking")
+    if character_model.current_motion != "Walk" or not character_model.animation_player.is_playing():
+        fail("Skinned character did not switch to its walk animation")
         return
     var drag := InputEventScreenDrag.new()
     drag.index = 0
@@ -91,7 +88,7 @@ func run() -> void:
     if player.touch_move.length() > 0.01 or player.touch_sprinting or Vector2(player.velocity.x, player.velocity.z).length() > 0.05:
         fail("Release did not stop player")
         return
-    print("PASS: arms, legs, knees and robe panels move; joystick speed, turns and braking blend smoothly")
+    print("PASS: skinned character plays walk; joystick speed, turns and braking blend smoothly")
     player.position = Vector3(0, 0.05, 0)
     player.velocity = Vector3.ZERO
     player.facing = Vector3.FORWARD
