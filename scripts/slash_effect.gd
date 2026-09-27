@@ -25,7 +25,7 @@ func _draw() -> void:
     var sweep := clampf((progress - 0.07) / 0.63, 0.0, 1.0)
     if sweep <= 0.0:
         return
-    var fade := pow(1.0 - progress, 0.56) * minf(1.0, sweep * 9.0)
+    var fade := minf(1.0, 1.35 * pow(1.0 - progress, 1.35)) * minf(1.0, sweep * 9.0)
     var gold := Color(1.0, 0.65, 0.24)
     var cyan := Color(0.26, 0.88, 0.98)
     var center := Vector2(0, -21)
@@ -69,12 +69,14 @@ func _draw_sweep(center: Vector2, outer_radius: float, inner_radius: float, star
     var blade_begin := lerpf(beginning, tip, 0.48)
     draw_colored_polygon(_band(center, outer_radius - 3.0, outer_radius - 9.0, blade_begin, tip, 16), Color(1.0, 1.0, 0.94, alpha * 0.78))
     draw_polyline(_arc(center, outer_radius - 1.0, blade_begin, tip, 16), Color(1.0, 1.0, 0.95, alpha * 0.84), 2.4, false)
-    var direction := Vector2(cos(tip), sin(tip))
-    var tangent := Vector2(-direction.y, direction.x)
-    var point := center + direction * outer_radius
-    var shard := PackedVector2Array([point + direction * 12.0, point + tangent * 7.0, point - direction * 7.0, point - tangent * 7.0])
-    draw_colored_polygon(shard, Color(0.94, 1.0, 0.94, alpha * 0.74))
-    draw_circle(point, 10.0, Color(tint.r, tint.g, tint.b, alpha * 0.16))
+    var tip_strength := clampf((0.86 - progress) * 8.0, 0.0, 1.0)
+    if tip_strength > 0.01:
+        var direction := Vector2(cos(tip), sin(tip))
+        var tangent := Vector2(-direction.y, direction.x)
+        var point := center + direction * outer_radius
+        var shard := PackedVector2Array([point + direction * 12.0, point + tangent * 7.0, point - direction * 7.0, point - tangent * 7.0])
+        draw_colored_polygon(shard, Color(0.94, 1.0, 0.94, alpha * 0.74 * tip_strength))
+        draw_circle(point, 10.0, Color(tint.r, tint.g, tint.b, alpha * 0.16 * tip_strength))
 
 func _band(center: Vector2, outer: float, inner: float, start_angle: float, end_angle: float, segments: int) -> PackedVector2Array:
     var points := PackedVector2Array()
@@ -97,9 +99,11 @@ func _arc(center: Vector2, radius: float, start_angle: float, end_angle: float, 
     return points
 
 func _draw_sparks(center: Vector2, radius: float, start_angle: float, end_angle: float, progress: float, tint: Color, alpha: float, count: int) -> void:
+    if progress > 0.86:
+        return
     for i in range(count):
         var t := float(i + 1) / float(count + 1)
-        if t > progress + 0.06 or t < progress - 0.55:
+        if t > progress + 0.06 or t < progress - 0.28:
             continue
         var angle := lerpf(start_angle, end_angle, t)
         var direction := Vector2(cos(angle), sin(angle))

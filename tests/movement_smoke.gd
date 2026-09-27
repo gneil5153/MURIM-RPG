@@ -32,6 +32,12 @@ func run() -> void:
                 if sheet.get_pixel(x, row * 72 + y).a > 0.01:
                     fail("Sprite frame contains a detached fragment above the character")
                     return
+    for row in range(3):
+        for y in range(15, 61):
+            for x in range(10):
+                if sheet.get_pixel(15 * 64 + x, row * 72 + y).a > 0.01:
+                    fail("Dodge frame contains a detached fragment beside the character")
+                    return
     var center: Vector2 = controls.get_global_transform_with_canvas() * controls.stick_center()
     var start: Vector2 = player.position
     touch(0, center + Vector2(0,-40), true)
