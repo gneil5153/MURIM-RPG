@@ -127,25 +127,31 @@ func _process(delta: float) -> void:
     if actor == null:
         return
     var horizontal_speed := Vector2(actor.velocity.x, actor.velocity.z).length()
-    var blend := clampf(horizontal_speed / 5.5, 0.0, 1.0)
+    var blend := clampf(horizontal_speed / 10.5, 0.0, 1.0)
     if blend > 0.03:
         walk_phase += delta * lerpf(5.0, 10.0, blend)
     else:
         idle_phase += delta
-    var swing := sin(walk_phase) * 0.62 * blend
-    left_leg.rotation.x = lerpf(left_leg.rotation.x, swing, delta * 10.0)
-    right_leg.rotation.x = lerpf(right_leg.rotation.x, -swing, delta * 10.0)
-    left_arm.rotation.x = lerpf(left_arm.rotation.x, -swing * 0.72, delta * 8.0)
-    right_arm.rotation.x = lerpf(right_arm.rotation.x, swing * 0.72, delta * 8.0)
+    var swing := sin(walk_phase) * lerpf(0.48, 0.9, blend) * blend
     var airborne := not actor.is_on_floor()
-    var jump_pose := 0.16 if airborne else 0.0
-    left_arm.rotation.z = lerpf(left_arm.rotation.z, jump_pose, delta * 7.0)
-    right_arm.rotation.z = lerpf(right_arm.rotation.z, -jump_pose, delta * 7.0)
-    var bob := sin(walk_phase * 2.0) * 0.045 * blend
-    position.y = lerpf(position.y, bob + clampf(actor.velocity.y * 0.006, -0.035, 0.035), delta * 12.0)
+    var rising := clampf(actor.velocity.y / 8.0, 0.0, 1.0) if airborne else 0.0
+    var landing: float = actor.get("landing_impact")
+    var attack: float = actor.get("attack_anim")
+    var attack_phase := sin((1.0 - attack) * PI) if attack > 0.0 else 0.0
+    var jump_pose := 0.2 * rising
+    left_leg.rotation.x = lerpf(left_leg.rotation.x, swing - jump_pose + landing * 0.52, delta * 12.0)
+    right_leg.rotation.x = lerpf(right_leg.rotation.x, -swing - jump_pose + landing * 0.52, delta * 12.0)
+    left_arm.rotation.x = lerpf(left_arm.rotation.x, -swing * 0.82 - attack_phase * 0.55, delta * 10.0)
+    right_arm.rotation.x = lerpf(right_arm.rotation.x, swing * 0.82 - attack_phase * 1.65, delta * 14.0)
+    left_arm.rotation.z = lerpf(left_arm.rotation.z, jump_pose + landing * 0.18, delta * 9.0)
+    right_arm.rotation.z = lerpf(right_arm.rotation.z, -jump_pose - attack_phase * 0.2, delta * 12.0)
+    var bob := sin(walk_phase * 2.0) * lerpf(0.018, 0.065, blend) * blend
+    bob += sin(idle_phase * 2.0) * 0.012 * (1.0 - blend)
+    position.y = lerpf(position.y, bob + clampf(actor.velocity.y * 0.006, -0.035, 0.035) - landing * 0.1, delta * 12.0)
     var dodge_lean: Vector3 = actor.get("dodge_lean")
-    rotation.x = lerpf(rotation.x, -0.055 * blend + (0.04 if airborne else 0.0) + dodge_lean.x, delta * 14.0)
-    rotation.z = lerpf(rotation.z, dodge_lean.z, delta * 14.0)
+    var turn_lean: float = actor.get("turn_lean")
+    rotation.x = lerpf(rotation.x, -0.1 * blend + (0.1 if airborne else 0.0) + dodge_lean.x - landing * 0.08, delta * 14.0)
+    rotation.z = lerpf(rotation.z, dodge_lean.z + turn_lean + attack_phase * -0.12, delta * 14.0)
     for index in range(cloak_tails.size()):
         var tail := cloak_tails[index]
         tail.rotation.z = sin(walk_phase * 0.75 + float(index)) * 0.15 * blend

@@ -52,12 +52,31 @@ func run() -> void:
         return
     var drag := InputEventScreenDrag.new()
     drag.index = 0
+    drag.position = center + Vector2(0, -46)
+    root.push_input(drag, true)
+    for i in range(30):
+        await physics_frame
+    var mid_speed: float = Vector2(player.velocity.x, player.velocity.z).length()
+    if mid_speed <= walk_speed + 1.0:
+        fail("Joystick extension did not smoothly increase movement speed")
+        return
+    var yaw_before_turn: float = player.get_node("Mesh").rotation.y
+    drag.position = center + Vector2(60, 0)
+    root.push_input(drag, true)
+    if absf(wrapf(player.get_node("Mesh").rotation.y - yaw_before_turn, -PI, PI)) > 0.01:
+        fail("Character rotation snapped immediately on joystick direction change")
+        return
+    await physics_frame
+    var turn_amount: float = absf(wrapf(player.get_node("Mesh").rotation.y - yaw_before_turn, -PI, PI))
+    if turn_amount <= 0.01 or turn_amount > 0.5:
+        fail("Character turn was not smooth and responsive")
+        return
     drag.position = center + Vector2(0, -65)
     root.push_input(drag, true)
     for i in range(30):
         await physics_frame
-    if not controls.stick_sprinting or Vector2(player.velocity.x, player.velocity.z).length() <= walk_speed + 1.0:
-        fail("Outer joystick did not sprint")
+    if not controls.stick_sprinting or Vector2(player.velocity.x, player.velocity.z).length() <= mid_speed + 1.5:
+        fail("Outer joystick did not reach a faster sprint")
         return
     touch(1, center + Vector2(200, 0), false)
     if controls.move_touch != 0:
@@ -69,7 +88,7 @@ func run() -> void:
     if player.touch_move.length() > 0.01 or player.touch_sprinting or Vector2(player.velocity.x, player.velocity.z).length() > 0.05:
         fail("Release did not stop player")
         return
-    print("PASS: touch press moves forward; outer drag sprints; independent fingers; release stops")
+    print("PASS: joystick extension scales speed; sprint and turns blend smoothly; independent fingers; release brakes")
     player.position = Vector3(0, 0.05, 0)
     player.velocity = Vector3.ZERO
     player.facing = Vector3.FORWARD
@@ -177,11 +196,31 @@ func run() -> void:
         fail("Jump button touch was not received")
         return
     touch(6, jump_point, false)
-    for i in range(12):
+    for i in range(6):
         await physics_frame
     if player.position.y <= jump_start + 0.5:
         fail("Jump input did not lift player")
         return
+    var air_start: Vector3 = player.position
+    var airborne_forward: Vector3 = -player.camera_pivot.global_transform.basis.z
+    airborne_forward.y = 0.0
+    airborne_forward = airborne_forward.normalized()
+    var airborne_right: Vector3 = player.camera_pivot.global_transform.basis.x
+    airborne_right.y = 0.0
+    airborne_right = airborne_right.normalized()
+    var air_move := InputEventScreenTouch.new()
+    air_move.index = 7
+    air_move.position = center + Vector2(55, 0)
+    air_move.pressed = true
+    root.push_input(air_move, true)
+    for i in range(10):
+        await physics_frame
+    var air_displacement: Vector3 = player.position - air_start
+    air_displacement.y = 0.0
+    if air_displacement.dot(airborne_right) < 0.2:
+        fail("Joystick did not steer the character while airborne")
+        return
+    touch(7, center, false)
     var saved_checkpoint: Vector3 = player.checkpoint_position
     player.global_position = Vector3(saved_checkpoint.x + 2.0, -7.0, saved_checkpoint.z)
     player.velocity = Vector3.DOWN

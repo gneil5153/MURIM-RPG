@@ -22,7 +22,7 @@ func stick_center() -> Vector2:
 
 func _draw() -> void:
     var base := stick_center()
-    var tint := Color(0.95, 0.72, 0.3, 0.8) if stick_sprinting else Color(0.78, 0.83, 0.84, 0.6)
+    var tint := Color(0.95, 0.72, 0.3, 0.8) if stick_vector.length() >= 0.58 else Color(0.78, 0.83, 0.84, 0.6)
     draw_circle(base, STICK_RADIUS + 2.0, Color(0.04, 0.07, 0.09, 0.34))
     draw_arc(base, STICK_RADIUS, 0.0, TAU, 48, tint, 3.0)
     draw_circle(base + stick_vector * STICK_RADIUS, 22.0, tint)
@@ -32,6 +32,8 @@ func _input(event: InputEvent) -> void:
     if event is InputEventScreenTouch:
         var point: Vector2 = get_global_transform_with_canvas().affine_inverse() * event.position
         if not event.pressed and action_touches.has(event.index):
+            if action_touches[event.index] == "Jump":
+                player.jump_released()
             action_touches.erase(event.index)
             get_viewport().set_input_as_handled()
             return
@@ -90,7 +92,7 @@ func _input(event: InputEvent) -> void:
 
 func _move_stick(point: Vector2) -> void:
     stick_vector = ((point - stick_center()) / STICK_RADIUS).limit_length(1.0)
-    stick_sprinting = stick_vector.length() >= 0.85
+    stick_sprinting = stick_vector.length() >= 0.58
     player.set_move_vector(stick_vector)
     player.touch_sprinting = stick_sprinting
     queue_redraw()
