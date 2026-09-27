@@ -22,14 +22,12 @@ var jump_anim := 0.0
 var landing_impact := 0.0
 var turn_lean := 0.0
 var dodge_lean := Vector2.ZERO
-var checkpoint_position := Vector2.ZERO
 var attack_visual: Node2D
 @onready var camera: Camera2D = $Camera2D
 @onready var sprite: AnimatedSprite2D = $Sprite
 
 func _ready() -> void:
     qi = max_qi
-    checkpoint_position = global_position
     _setup_animations()
     attack_visual = Node2D.new()
     attack_visual.name = "Slash"
@@ -39,10 +37,6 @@ func _ready() -> void:
     attack_visual.visible = false
 
 func _physics_process(delta: float) -> void:
-    if global_position.length() > 620.0:
-        global_position = checkpoint_position
-        velocity = Vector2.ZERO
-        dodge_time = 0.0
     dodge_cooldown = maxf(0.0, dodge_cooldown - delta)
     attack_cooldown = maxf(0.0, attack_cooldown - delta)
     attack_anim = maxf(0.0, attack_anim - delta * 3.0)

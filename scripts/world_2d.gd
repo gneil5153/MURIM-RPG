@@ -7,6 +7,7 @@ func _ready() -> void:
     ground.texture = load("res://assets/pixel/dojo_ground.png")
     ground.position = Vector2(-1024, -1024)
     ground.centered = false
+    ground.scale = Vector2(2.0, 2.0)
     ground.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
     ground.z_index = -5
     add_child(ground)

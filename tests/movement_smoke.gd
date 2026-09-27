@@ -43,6 +43,12 @@ func run() -> void:
         return
     touch(0,center,false)
     for i in range(25): await physics_frame
+    player.global_position = Vector2(700, 0)
+    player.velocity = Vector2.ZERO
+    await physics_frame
+    if player.global_position.distance_to(Vector2(700, 0)) > 2.0:
+        fail("Walking beyond the old radius incorrectly returned the character to spawn")
+        return
     player.global_position = Vector2.ZERO
     player.velocity = Vector2.ZERO
     player.facing = Vector2.UP
