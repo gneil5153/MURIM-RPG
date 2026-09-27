@@ -45,6 +45,17 @@ jobs:
       - name: Import project
         run: godot --headless --path . --import
 
+      - name: Test touch movement
+        run: |
+          if ! godot --headless --path . --script res://tests/movement_smoke.gd > movement.log 2>&1; then
+            cat movement.log
+            exit 1
+          fi
+          cat movement.log
+          if grep -E 'SCRIPT ERROR|Parse Error|Failed to load script' movement.log; then
+            exit 1
+          fi
+
       - name: Export APK
         run: |
           mkdir -p build

@@ -1,68 +1,65 @@
 extends Control
+
 @export var player_path: NodePath
-var player
-var touch_origin := Vector2.ZERO
-var touch_position := Vector2.ZERO
+var player: CharacterBody3D
 var move_touch := -1
-var sprint_button_down := false
+var stick_vector := Vector2.ZERO
 var stick_sprinting := false
+const STICK_RADIUS := 65.0
 
-func _ready():
-	player = get_node(player_path)
-	queue_redraw()
+func _ready() -> void:
+    player = get_node(player_path)
+    mouse_filter = Control.MOUSE_FILTER_IGNORE
+    queue_redraw()
 
-func _draw():
-	var base := Vector2(112.0, size.y - 116.0)
-	var knob := base
-	if move_touch != -1:
-		knob = base + (touch_position - touch_origin).limit_length(43.0)
-	draw_circle(base, 67.0, Color(0.04, 0.07, 0.09, 0.34))
-	draw_arc(base, 65.0, 0.0, TAU, 48, Color(0.78, 0.83, 0.84, 0.46), 3.0)
-	draw_circle(knob, 27.0, Color(0.75, 0.82, 0.83, 0.55))
+func stick_center() -> Vector2:
+    return Vector2(112.0, size.y - 116.0)
 
-func _unhandled_input(event):
+func _draw() -> void:
+    var base := stick_center()
+    var tint := Color(0.95, 0.72, 0.3, 0.8) if stick_sprinting else Color(0.78, 0.83, 0.84, 0.6)
+    draw_circle(base, STICK_RADIUS + 2.0, Color(0.04, 0.07, 0.09, 0.34))
+    draw_arc(base, STICK_RADIUS, 0.0, TAU, 48, tint, 3.0)
+    draw_circle(base + stick_vector * STICK_RADIUS, 22.0, tint)
+
+func _input(event: InputEvent) -> void:
+    # Read touch events before a full-screen GUI can consume them.
     if event is InputEventScreenTouch:
-        if event.pressed and event.position.x < size.x * 0.42 and event.position.y > size.y * 0.48 and move_touch == -1:
+        var point: Vector2 = get_global_transform_with_canvas().affine_inverse() * event.position
+        if event.pressed and move_touch == -1 and point.distance_to(stick_center()) <= STICK_RADIUS + 28.0:
             move_touch = event.index
-            touch_origin = Vector2(112.0, size.y - 116.0)
-            touch_position = event.position
-            stick_sprinting = false
-            _update_sprint_action()
-            queue_redraw()
+            _move_stick(point)
+            get_viewport().set_input_as_handled()
         elif not event.pressed and event.index == move_touch:
-            move_touch = -1
-            stick_sprinting = false
-            player.set_move_vector(Vector2.ZERO)
-            _update_sprint_action()
-            queue_redraw()
+            release_stick()
+            get_viewport().set_input_as_handled()
     elif event is InputEventScreenDrag and event.index == move_touch:
-        touch_position = event.position
-        var stick_delta: Vector2 = touch_position - touch_origin
-        player.set_move_vector(stick_delta.limit_length(45.0) / 45.0)
-        stick_sprinting = stick_delta.length() >= 36.0
-        _update_sprint_action()
-        queue_redraw()
+        var point: Vector2 = get_global_transform_with_canvas().affine_inverse() * event.position
+        _move_stick(point)
+        get_viewport().set_input_as_handled()
 
-func _update_sprint_action():
-	if sprint_button_down or stick_sprinting:
-		Input.action_press("sprint")
-	else:
-		Input.action_release("sprint")
+func _move_stick(point: Vector2) -> void:
+    stick_vector = ((point - stick_center()) / STICK_RADIUS).limit_length(1.0)
+    stick_sprinting = stick_vector.length() >= 0.85
+    player.set_move_vector(stick_vector)
+    player.touch_sprinting = stick_sprinting
+    queue_redraw()
 
-func _on_attack_pressed():
-	Input.action_press("attack")
-	await get_tree().process_frame
-	Input.action_release("attack")
+func release_stick() -> void:
+    move_touch = -1
+    stick_vector = Vector2.ZERO
+    stick_sprinting = false
+    if is_instance_valid(player):
+        player.set_move_vector(Vector2.ZERO)
+        player.touch_sprinting = false
+    queue_redraw()
 
-func _on_dodge_pressed():
-	Input.action_press("dodge")
-	await get_tree().process_frame
-	Input.action_release("dodge")
+func _notification(what: int) -> void:
+    if what == NOTIFICATION_APPLICATION_FOCUS_OUT:
+        release_stick()
 
-func _on_sprint_button_down():
-	sprint_button_down = true
-	_update_sprint_action()
+func _on_attack_pressed() -> void:
+    player.attack()
 
-func _on_sprint_button_up():
-	sprint_button_down = false
-	_update_sprint_action()
+func _on_dodge_pressed() -> void:
+    player.dodge()

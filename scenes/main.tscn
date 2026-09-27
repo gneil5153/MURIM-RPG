@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3]
+[gd_scene load_steps=17 format=3]
 
 [ext_resource path="res://scripts/player.gd" type="Script" id="1"]
 [ext_resource path="res://scripts/world_streamer.gd" type="Script" id="2"]
@@ -39,6 +39,9 @@ height = 1.8
 size = Vector3(160, 0.3, 160)
 [sub_resource type="BoxShape3D" id="GroundShape"]
 size = Vector3(160, 0.3, 160)
+
+[sub_resource type="BoxMesh" id="MarkerMesh"]
+size = Vector3(2, 0.06, 2)
 
 [node name="MurimPrototype" type="Node3D"]
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
@@ -123,28 +126,37 @@ anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = -304.0
-offset_top = -126.0
+offset_top = -152.0
 offset_right = -174.0
-offset_bottom = 4.0
+offset_bottom = -22.0
 grow_horizontal = 0
 grow_vertical = 0
 text = "ESQUIVA"
 
-[node name="Sprint" type="Button" parent="HUD/TouchControls"]
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -158.0
-offset_top = -286.0
-offset_right = -28.0
-offset_bottom = -166.0
-grow_horizontal = 0
-grow_vertical = 0
-text = "CORRER"
-
 [connection signal="pressed" from="HUD/TouchControls/Attack" to="HUD/TouchControls" method="_on_attack_pressed"]
 [connection signal="pressed" from="HUD/TouchControls/Dodge" to="HUD/TouchControls" method="_on_dodge_pressed"]
-[connection signal="button_down" from="HUD/TouchControls/Sprint" to="HUD/TouchControls" method="_on_sprint_button_down"]
-[connection signal="button_up" from="HUD/TouchControls/Sprint" to="HUD/TouchControls" method="_on_sprint_button_up"]
+
+[node name="Version" type="Label" parent="HUD/TouchControls"]
+offset_left = 26.0
+offset_top = 20.0
+offset_right = 620.0
+offset_bottom = 65.0
+mouse_filter = 2
+theme_override_font_sizes/font_size = 22
+text = "MURIM 0.3 · Arrastra el círculo para caminar o correr"
+
+[node name="Marker0" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.03, -5)
+mesh = SubResource("MarkerMesh")
+
+[node name="Marker1" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.03, -10)
+mesh = SubResource("MarkerMesh")
+
+[node name="Marker2" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.03, -15)
+mesh = SubResource("MarkerMesh")
+
+[node name="Marker3" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.03, -20)
+mesh = SubResource("MarkerMesh")
