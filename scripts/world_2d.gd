@@ -28,4 +28,4 @@ func _ready() -> void:
         art.scale = Vector2(2.0, 2.0)
         art.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
         tree.add_child(art)
-        get_parent().add_child(tree)
+        get_parent().call_deferred("add_child", tree)

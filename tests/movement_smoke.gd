@@ -59,7 +59,7 @@ func run() -> void:
     var before_dodge: Vector2 = player.position
     player.dodge()
     for i in range(10): await physics_frame
-    if player.position.y <= before_dodge.y + 35:
+    if player.position.y >= before_dodge.y - 35:
         fail("Neutral dodge did not move opposite the facing direction")
         return
     player.dodge_time=0.0
