@@ -13,12 +13,32 @@ var qi := 100.0
 var dodge_time := 0.0
 var attack_cooldown := 0.0
 var combo_step := 0
+var facing := Vector3.FORWARD
+var dodge_direction := Vector3.FORWARD
+var dodge_cooldown := 0.0
+var attack_visual: Node3D
+var attack_tween: Tween
 @onready var camera_pivot: Node3D = $CameraPivot
 
 func _ready():
     qi = max_qi
+    attack_visual = Node3D.new()
+    add_child(attack_visual)
+    var fist := MeshInstance3D.new()
+    var shape := BoxMesh.new()
+    shape.size = Vector3(0.38, 0.38, 1.15)
+    fist.mesh = shape
+    fist.position = Vector3(0.35, 1.25, -1.05)
+    var material := StandardMaterial3D.new()
+    material.albedo_color = Color(1.0, 0.75, 0.25)
+    material.emission_enabled = true
+    material.emission = Color(0.7, 0.35, 0.05)
+    fist.material_override = material
+    attack_visual.add_child(fist)
+    attack_visual.visible = false
 
 func _physics_process(delta):
+    dodge_cooldown = maxf(0.0, dodge_cooldown - delta)
     attack_cooldown = maxf(0.0, attack_cooldown - delta)
     var input := Input.get_vector("move_left", "move_right", "move_forward", "move_back")
     if touch_move.length() > 0.12:
@@ -27,6 +47,8 @@ func _physics_process(delta):
     var right := camera_pivot.global_transform.basis.x; right.y = 0; right = right.normalized()
     # Input.get_vector returns negative Y for the "move_forward" action.
     var dir := (right * input.x - forward * input.y).normalized()
+    if dir.length() > 0.1 and dodge_time <= 0.0:
+        facing = dir
     if Input.is_action_just_pressed("dodge"): dodge()
     if Input.is_action_just_pressed("attack"): attack()
     var running := (touch_sprinting or Input.is_action_pressed("sprint")) and qi > 1.0 and input.length() > 0.12
@@ -35,10 +57,14 @@ func _physics_process(delta):
         qi = maxf(0.0, qi - 6.0 * delta)
     else:
         qi = minf(max_qi, qi + 10.0 * delta)
-    var target_speed := dodge_speed if dodge_time > 0.0 else base_speed
-    dodge_time = maxf(0.0, dodge_time - delta)
-    velocity.x = move_toward(velocity.x, dir.x * target_speed, acceleration * delta)
-    velocity.z = move_toward(velocity.z, dir.z * target_speed, acceleration * delta)
+    if dodge_time > 0.0:
+        velocity.x = dodge_direction.x * dodge_speed
+        velocity.z = dodge_direction.z * dodge_speed
+        dodge_time = maxf(0.0, dodge_time - delta)
+    else:
+        velocity.x = move_toward(velocity.x, dir.x * base_speed, acceleration * delta)
+        velocity.z = move_toward(velocity.z, dir.z * base_speed, acceleration * delta)
+    $Mesh.rotation.z = -0.35 if dodge_time > 0.0 else 0.0
     # Keep camera yaw independent of the moving body.
     if dir.length() > 0.1:
         $Mesh.rotation.y = lerp_angle($Mesh.rotation.y, atan2(-dir.x, -dir.z), 12.0 * delta)
@@ -49,8 +75,17 @@ func attack():
     if attack_cooldown > 0.0: return
     attack_cooldown = 0.32
     combo_step = (combo_step % 3) + 1
-    for body in $AttackArea.get_overlapping_bodies():
-        if body != self and body.has_method("take_damage"):
+    attack_visual.visible = true
+    attack_visual.rotation.y = atan2(-facing.x, -facing.z) - 0.7
+    if attack_tween:
+        attack_tween.kill()
+    attack_tween = create_tween()
+    attack_tween.tween_property(attack_visual, "rotation:y", attack_visual.rotation.y + 1.4, 0.22)
+    attack_tween.tween_callback(func(): attack_visual.visible = false)
+    for body in get_tree().get_nodes_in_group("damageable"):
+        var offset: Vector3 = body.global_position - global_position
+        offset.y = 0.0
+        if offset.length() <= attack_range and (offset.length() < 0.1 or facing.dot(offset.normalized()) >= 0.35):
             body.take_damage(attack_damage + (combo_step - 1) * 5.0)
 
 func set_move_vector(v: Vector2) -> void:
@@ -59,6 +94,10 @@ func set_move_vector(v: Vector2) -> void:
         touch_move = Vector2.ZERO
 
 func dodge() -> void:
-    if qi >= 15.0 and dodge_time <= 0.0:
+    if qi >= 15.0 and dodge_cooldown <= 0.0:
         qi -= 15.0
         dodge_time = 0.22
+        dodge_cooldown = 0.55
+        dodge_direction = facing
+        if touch_move.length() > 0.12:
+            dodge_direction = Vector3(touch_move.x, 0.0, touch_move.y).normalized()

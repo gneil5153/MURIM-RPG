@@ -3,6 +3,7 @@ extends Control
 @export var player_path: NodePath
 var player: CharacterBody3D
 var move_touch := -1
+var action_touches: Dictionary = {}
 var stick_vector := Vector2.ZERO
 var stick_sprinting := false
 const STICK_RADIUS := 65.0
@@ -26,6 +27,22 @@ func _input(event: InputEvent) -> void:
     # Read touch events before a full-screen GUI can consume them.
     if event is InputEventScreenTouch:
         var point: Vector2 = get_global_transform_with_canvas().affine_inverse() * event.position
+        if not event.pressed and action_touches.has(event.index):
+            action_touches.erase(event.index)
+            get_viewport().set_input_as_handled()
+            return
+        if event.pressed:
+            for button_name in ["Attack", "Dodge"]:
+                var button: Button = get_node(button_name)
+                if Rect2(button.position, button.size).has_point(point):
+                    if not action_touches.has(event.index):
+                        action_touches[event.index] = button_name
+                        if button_name == "Attack":
+                            player.attack()
+                        else:
+                            player.dodge()
+                    get_viewport().set_input_as_handled()
+                    return
         if event.pressed and move_touch == -1 and point.distance_to(stick_center()) <= STICK_RADIUS + 28.0:
             move_touch = event.index
             _move_stick(point)
@@ -33,6 +50,8 @@ func _input(event: InputEvent) -> void:
         elif not event.pressed and event.index == move_touch:
             release_stick()
             get_viewport().set_input_as_handled()
+    elif event is InputEventScreenDrag and action_touches.has(event.index):
+        get_viewport().set_input_as_handled()
     elif event is InputEventScreenDrag and event.index == move_touch:
         var point: Vector2 = get_global_transform_with_canvas().affine_inverse() * event.position
         _move_stick(point)
@@ -57,6 +76,12 @@ func release_stick() -> void:
 func _notification(what: int) -> void:
     if what == NOTIFICATION_APPLICATION_FOCUS_OUT:
         release_stick()
+        action_touches.clear()
+
+func _process(_delta: float) -> void:
+    $Attack.modulate = Color(1.0, 0.75, 0.3) if player.attack_cooldown > 0.0 else Color.WHITE
+    $Dodge.modulate = Color(0.4, 0.8, 1.0) if player.dodge_cooldown > 0.0 else Color.WHITE
+    $Status.text = "Qi: %d / 100" % int(player.qi)
 
 func _on_attack_pressed() -> void:
     player.attack()

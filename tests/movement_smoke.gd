@@ -29,6 +29,8 @@ func run() -> void:
         await process_frame
     var controls = world.get_node("HUD/TouchControls")
     var player = world.get_node("Player")
+    var dummy = world.get_node("TrainingDummy")
+    dummy.position.x = 20.0
     var center: Vector2 = controls.get_global_transform_with_canvas() * controls.stick_center()
     var start: Vector3 = player.position
     touch(0, center + Vector2(0, -30), true)
@@ -61,4 +63,55 @@ func run() -> void:
         fail("Release did not stop player")
         return
     print("PASS: touch press moves forward; outer drag sprints; independent fingers; release stops")
+    player.position = Vector3(0, 0.05, 0)
+    player.velocity = Vector3.ZERO
+    player.facing = Vector3.FORWARD
+    dummy.position = Vector3(0, 0, -2.2)
+    for i in range(5):
+        await physics_frame
+    var attack_point: Vector2 = controls.get_global_transform_with_canvas() * (controls.get_node("Attack").position + controls.get_node("Attack").size / 2.0)
+    var dodge_point: Vector2 = controls.get_global_transform_with_canvas() * (controls.get_node("Dodge").position + controls.get_node("Dodge").size / 2.0)
+    touch(2, attack_point, true)
+    if dummy.health != 80.0 or dummy.hits != 1 or not player.attack_visual.visible:
+        fail("Attack touch did not produce exactly one visible damaging hit")
+        return
+    touch(2, attack_point, false)
+    touch(2, attack_point, true)
+    touch(2, attack_point, false)
+    if dummy.hits != 1:
+        fail("Attack cooldown allowed a duplicate hit")
+        return
+    dummy.position.x = 20.0
+    start = player.position
+    var qi_before: float = player.qi
+    touch(3, dodge_point, true)
+    touch(3, dodge_point, false)
+    if player.qi > qi_before - 14.0:
+        fail("Dodge did not consume Qi")
+        return
+    for i in range(15):
+        await physics_frame
+    if player.position.z > start.z - 2.0:
+        fail("Stationary dodge did not displace player")
+        return
+    for i in range(30):
+        await physics_frame
+    touch(0, center + Vector2(45, 0), true)
+    for i in range(5):
+        await physics_frame
+    start = player.position
+    touch(1, dodge_point, true)
+    touch(1, dodge_point, false)
+    touch(2, attack_point, true)
+    touch(2, attack_point, false)
+    if controls.move_touch != 0 or player.touch_move.x < 0.5 or not player.attack_visual.visible:
+        fail("Action touches interrupted joystick or missed attack")
+        return
+    for i in range(15):
+        await physics_frame
+    if player.position.x < start.x + 2.0:
+        fail("Moving dodge ignored joystick direction")
+        return
+    touch(0, center, false)
+    print("PASS: attack damage/visual/cooldown; idle dodge; moving dodge; simultaneous joystick and action touches")
     quit(0)
