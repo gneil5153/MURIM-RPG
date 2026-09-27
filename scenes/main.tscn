@@ -129,7 +129,7 @@ offset_right = 620.0
 offset_bottom = 65.0
 mouse_filter = 2
 theme_override_font_sizes/font_size = 22
-text = "MURIM 0.13 · Silueta más humana"
+text = "MURIM 0.14 · Personaje refinado"
 
 [node name="Marker0" type="MeshInstance3D" parent="."]
 position = Vector3(0, 0.03, -5)

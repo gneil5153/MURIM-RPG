@@ -31,7 +31,7 @@ func run() -> void:
     var player = world.get_node("Player")
     var dummy = world.get_node("TrainingDummy")
     var character_model = player.get_node("Mesh")
-    if character_model.get_child_count() < 30 or character_model.get_node_or_null("Hair cap") == null or character_model.get_node_or_null("Sword sheath") == null:
+    if character_model.get_child_count() < 30 or character_model.get_node_or_null("Hair cap") == null or character_model.get_node_or_null("Hair ribbon") == null or character_model.get_node_or_null("Sword sheath") == null or character_model.left_elbow == null or character_model.right_elbow == null:
         fail("Stylized wuxia character model was not built")
         return
     dummy.position.x = 20.0
