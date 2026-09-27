@@ -99,19 +99,27 @@ func run() -> void:
     touch(0, center + Vector2(45, 0), true)
     for i in range(5):
         await physics_frame
+    if player.facing.x < 0.9:
+        fail("Joystick aim was not stored")
+        return
+    touch(0, center, false)
     start = player.position
     touch(1, dodge_point, true)
     touch(1, dodge_point, false)
-    touch(2, attack_point, true)
-    touch(2, attack_point, false)
-    if controls.move_touch != 0 or player.touch_move.x < 0.5 or not player.attack_visual.visible:
-        fail("Action touches interrupted joystick or missed attack")
+    if controls.move_touch != -1 or player.touch_move.length() > 0.01:
+        fail("Released joystick did not clear movement input")
         return
     for i in range(15):
         await physics_frame
     if player.position.x < start.x + 2.0:
-        fail("Moving dodge ignored joystick direction")
+        fail("Dodge did not preserve the last joystick direction after release")
+        return
+    touch(0, center + Vector2(45, 0), true)
+    touch(2, attack_point, true)
+    touch(2, attack_point, false)
+    if controls.move_touch != 0 or not player.attack_visual.visible or player.facing.x < 0.9:
+        fail("Attack did not aim along joystick direction during multitouch")
         return
     touch(0, center, false)
-    print("PASS: attack damage/visual/cooldown; idle dodge; moving dodge; simultaneous joystick and action touches")
+    print("PASS: attack damage/visual/cooldown/aim; idle dodge; dodge keeps released joystick direction; simultaneous joystick and action touches")
     quit(0)

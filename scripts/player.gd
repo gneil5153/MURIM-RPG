@@ -28,7 +28,8 @@ func _ready():
     var shape := BoxMesh.new()
     shape.size = Vector3(0.38, 0.38, 1.15)
     fist.mesh = shape
-    fist.position = Vector3(0.35, 1.25, -1.05)
+    attack_visual.position = Vector3(0.0, 1.2, -0.85)
+    fist.position = Vector3(0.35, 0.05, -0.55)
     var material := StandardMaterial3D.new()
     material.albedo_color = Color(1.0, 0.75, 0.25)
     material.emission_enabled = true
@@ -76,11 +77,11 @@ func attack():
     attack_cooldown = 0.32
     combo_step = (combo_step % 3) + 1
     attack_visual.visible = true
-    attack_visual.rotation.y = atan2(-facing.x, -facing.z) - 0.7
+    attack_visual.rotation.y = atan2(-facing.x, -facing.z) - 0.65
     if attack_tween:
         attack_tween.kill()
     attack_tween = create_tween()
-    attack_tween.tween_property(attack_visual, "rotation:y", attack_visual.rotation.y + 1.4, 0.22)
+    attack_tween.tween_property(attack_visual, "rotation:y", attack_visual.rotation.y + 1.3, 0.22)
     attack_tween.tween_callback(func(): attack_visual.visible = false)
     for body in get_tree().get_nodes_in_group("damageable"):
         var offset: Vector3 = body.global_position - global_position
@@ -92,6 +93,15 @@ func set_move_vector(v: Vector2) -> void:
     touch_move = v.limit_length(1.0)
     if touch_move.length() < 0.12:
         touch_move = Vector2.ZERO
+    else:
+        var forward := -camera_pivot.global_transform.basis.z
+        forward.y = 0.0
+        forward = forward.normalized()
+        var right := camera_pivot.global_transform.basis.x
+        right.y = 0.0
+        right = right.normalized()
+        facing = (right * touch_move.x - forward * touch_move.y).normalized()
+        $Mesh.rotation.y = atan2(-facing.x, -facing.z)
 
 func dodge() -> void:
     if qi >= 15.0 and dodge_cooldown <= 0.0:
@@ -99,5 +109,4 @@ func dodge() -> void:
         dodge_time = 0.22
         dodge_cooldown = 0.55
         dodge_direction = facing
-        if touch_move.length() > 0.12:
-            dodge_direction = Vector3(touch_move.x, 0.0, touch_move.y).normalized()
+        dodge_direction = facing
