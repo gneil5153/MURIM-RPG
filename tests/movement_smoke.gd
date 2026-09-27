@@ -45,8 +45,8 @@ func run() -> void:
     if player.position.y >= start.y - 18 or not player.sprite.animation.begins_with("walk_down"):
         fail("Joystick did not move and animate the pixel character")
         return
-    if absf(player.sprite.rotation) < 0.025 or player.sprite.position.y > -20.5:
-        fail("Walk cycle did not show a visible body stride")
+    if absf(player.sprite.rotation) > 0.001 or absf(player.sprite.position.x) > 0.001 or absf(player.sprite.position.y + 20.0) > 0.001:
+        fail("Walking still sways the character")
         return
     if player.acceleration != 1812.5 or player.braking != 2187.5:
         fail("Movement acceleration and braking are not 25 percent firmer")
@@ -92,6 +92,9 @@ func run() -> void:
     for i in range(10): await physics_frame
     if not player.sprite.animation.begins_with("attack_down") or player.sprite.frame < 2:
         fail("The attack did not visibly play the sword draw animation")
+        return
+    if not player.weapon_visual.get("attacking") or not player.weapon_visual.visible:
+        fail("Equipped sword was not visible during the attack")
         return
     var after_first_attack: float = dummy.health
     player.attack_cooldown = 0.0
@@ -157,5 +160,5 @@ func run() -> void:
         return
     touch(3,Vector2(850,260),false)
     touch(4,Vector2(1080,260),false)
-    print("PASS: 25% firmer movement, inverted vertical facing, combo attacks, radiant special, dodge, hop and camera zoom")
+    print("PASS: stable walking, visible sword, combo attacks, radiant special, dodge, hop and camera zoom")
     quit(0)

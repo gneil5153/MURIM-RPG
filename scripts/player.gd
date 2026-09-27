@@ -21,7 +21,6 @@ var special_anim := 0.0
 var special_cooldown := 0.0
 var combo_step := 0
 var last_attack_time := -10.0
-var walk_phase := 0.0
 var jump_buffer := 0.0
 var jump_held := false
 var jump_anim := 0.0
@@ -29,6 +28,7 @@ var landing_impact := 0.0
 var turn_lean := 0.0
 var dodge_lean := Vector2.ZERO
 var attack_visual: Node2D
+var weapon_visual: Node2D
 var special_visual: Node2D
 var ground_shadow: Node2D
 @onready var camera: Camera2D = $Camera2D
@@ -42,6 +42,12 @@ func _ready() -> void:
     ground_shadow.z_index = -1
     ground_shadow.set_script(load("res://scripts/character_shadow.gd"))
     add_child(ground_shadow)
+    weapon_visual = Node2D.new()
+    weapon_visual.name = "EquippedWeapon"
+    weapon_visual.z_index = 5
+    weapon_visual.set_script(load("res://scripts/sword_visual.gd"))
+    add_child(weapon_visual)
+    weapon_visual.call("set_facing", facing)
     attack_visual = Node2D.new()
     attack_visual.name = "Slash"
     attack_visual.z_index = 4
@@ -156,6 +162,7 @@ func _show_slash() -> void:
     attack_visual.rotation = facing.angle() + PI * 0.5
     attack_visual.visible = true
     attack_visual.call("restart", combo_step)
+    weapon_visual.call("swing", combo_step, facing)
     if sprite.animation.begins_with("attack_"):
         sprite.set_frame_and_progress(0, 0.0)
         sprite.play()
@@ -201,7 +208,7 @@ func _setup_animations() -> void:
     sprite.animation = "idle_down"
     sprite.play()
 
-func _update_animation(delta: float = 1.0 / 60.0) -> void:
+func _update_animation(_delta: float = 1.0 / 60.0) -> void:
     var direction_name := "up"
     sprite.flip_h = false
     if absf(facing.x) > absf(facing.y):
@@ -229,26 +236,18 @@ func _update_animation(delta: float = 1.0 / 60.0) -> void:
     var anim_name := state + "_" + direction_name
     if sprite.animation != anim_name:
         sprite.play(anim_name)
-    if state == "walk":
-        var gait_rate := 13.0 if speed > run_speed * 0.72 else 9.5
-        walk_phase = fposmod(walk_phase + delta * gait_rate, TAU)
-        var stride := sin(walk_phase)
-        sprite.position.x = stride * 2.8
-        sprite.rotation = stride * 0.075
-    else:
-        sprite.position.x = 0.0
-        sprite.rotation = 0.0
+    sprite.position.x = 0.0
+    sprite.rotation = 0.0
     var lift := 0.0
     if jump_anim > 0.06:
         var progress := 1.0 - jump_anim / 0.48
         lift = sin(progress * PI) * 24.0
         sprite.position.y = -20.0 - lift
         sprite.z_index = 2
-    elif state == "walk":
-        sprite.position.y = -20.0 - absf(sin(walk_phase)) * 3.2
-        sprite.z_index = 0
     else:
         sprite.position.y = -20.0
         sprite.z_index = 0
+    weapon_visual.position.y = sprite.position.y + 20.0
+    weapon_visual.call("set_facing", facing)
     if is_instance_valid(ground_shadow):
         ground_shadow.call("set_lift", lift)
