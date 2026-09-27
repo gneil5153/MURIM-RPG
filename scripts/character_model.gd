@@ -41,14 +41,27 @@ func _ready() -> void:
     metal.metallic = 0.72
     hair.specular = 0.48
 
-    # Long layered robe, slightly flared toward the hem.
-    var skirt := CylinderMesh.new()
-    skirt.top_radius = 0.24
-    skirt.bottom_radius = 0.36
-    skirt.height = 0.9
-    skirt.radial_segments = 16
-    _piece(self, "Long outer robe", skirt, Vector3(0, 0.72, 0), robe)
-    _piece(self, "Inner tunic", _capsule(0.23, 1.0), Vector3(0, 1.41, 0), inner)
+    # The clothing is cut as continuous, shaped surfaces. The shoulders, waist,
+    # hips and asymmetric hem have separate profiles instead of stacked solids.
+    _piece(self, "Tailored upper robe", _loft([
+        Vector4(0.225, 0.17, 1.27, 0.0),
+        Vector4(0.245, 0.17, 1.44, 0.0),
+        Vector4(0.295, 0.19, 1.68, 0.0),
+        Vector4(0.31, 0.18, 1.82, 0.01),
+        Vector4(0.17, 0.13, 1.92, 0.01)
+    ]), Vector3.ZERO, robe_light)
+    _piece(self, "Layered lower robe", _loft([
+        Vector4(0.38, 0.38, 0.24, 0.045),
+        Vector4(0.36, 0.35, 0.5, 0.015),
+        Vector4(0.29, 0.28, 0.91, 0.0),
+        Vector4(0.235, 0.20, 1.31, 0.0)
+    ], 24, 0.035), Vector3.ZERO, robe)
+    _piece(self, "Inner tunic", _loft([
+        Vector4(0.19, 0.155, 1.18, -0.005),
+        Vector4(0.19, 0.15, 1.47, -0.005),
+        Vector4(0.235, 0.17, 1.74, -0.005),
+        Vector4(0.17, 0.13, 1.85, -0.005)
+    ]), Vector3.ZERO, inner)
     _piece(self, "Blue hanging sash", _box(Vector3(0.09, 0.82, 0.05)), Vector3(0.18, 0.79, -0.34), inner, Vector3.ONE, Vector3(0, 0, -0.12))
     _piece(self, "High collar", _capsule(0.19, 0.25), Vector3(0, 1.82, -0.025), robe_light, Vector3(1.0, 0.72, 0.78))
     _piece(self, "Front collar fold", _box(Vector3(0.13, 0.43, 0.045)), Vector3(-0.065, 1.73, -0.205), trim, Vector3.ONE, Vector3(0, 0, -0.22))
@@ -68,7 +81,7 @@ func _ready() -> void:
 
     # Embroidered shoulder mantle layered over the robe collar.
     for side in [-1.0, 1.0]:
-        _piece(self, "Shoulder mantle", _sphere(0.25), Vector3(side * 0.3, 1.84, 0.015), robe_light, Vector3(1.1, 0.45, 0.84))
+        _piece(self, "Shoulder mantle", _sphere(0.21), Vector3(side * 0.30, 1.79, 0.015), robe, Vector3(1.25, 0.45, 0.85))
         _piece(self, "Shoulder filigree", _box(Vector3(0.24, 0.02, 0.018)), Vector3(side * 0.3, 1.9, -0.19), trim, Vector3.ONE, Vector3(0, 0, side * -0.08))
         for mark in range(3):
             _piece(self, "Shoulder stitch", _sphere(0.018), Vector3(side * (0.22 + mark * 0.055), 1.84, -0.235), trim)
@@ -99,8 +112,8 @@ func _ready() -> void:
 
     # Sleeves hang from the shoulders; hands are children so they cannot float
     # in place while the arms swing.
-    left_arm = _limb("Left sleeve", Vector3(-0.35, 1.72, 0), 0.125, 0.46, robe_light)
-    right_arm = _limb("Right sleeve", Vector3(0.35, 1.72, 0), 0.125, 0.46, robe_light)
+    left_arm = _sleeve("Left sleeve", Vector3(-0.35, 1.72, 0), robe_light)
+    right_arm = _sleeve("Right sleeve", Vector3(0.35, 1.72, 0), robe_light)
     left_elbow = Node3D.new()
     left_elbow.name = "Left elbow"
     left_elbow.position = Vector3(0, -0.23, 0)
@@ -109,8 +122,13 @@ func _ready() -> void:
     right_elbow.name = "Right elbow"
     right_elbow.position = Vector3(0, -0.23, 0)
     right_arm.add_child(right_elbow)
-    _piece(left_elbow, "Left forearm", _capsule(0.1, 0.43), Vector3(0, -0.12, 0), robe_light)
-    _piece(right_elbow, "Right forearm", _capsule(0.1, 0.43), Vector3(0, -0.12, 0), robe_light)
+    var lower_sleeve := _loft([
+        Vector4(0.13, 0.135, -0.31, 0.0),
+        Vector4(0.115, 0.12, -0.18, 0.0),
+        Vector4(0.095, 0.10, 0.08, 0.0)
+    ], 12)
+    _piece(left_elbow, "Left forearm", lower_sleeve, Vector3.ZERO, robe_light)
+    _piece(right_elbow, "Right forearm", lower_sleeve, Vector3.ZERO, robe_light)
     _piece(left_elbow, "Left hand", _sphere(0.09), Vector3(0, -0.35, -0.025), skin)
     _piece(right_elbow, "Right hand", _sphere(0.09), Vector3(0, -0.35, -0.025), skin)
     _piece(left_elbow, "Left cuff", _box(Vector3(0.22, 0.08, 0.22)), Vector3(0, -0.28, 0), inner)
@@ -143,15 +161,20 @@ func _ready() -> void:
     _piece(self, "Hair cap", _sphere(0.24), Vector3(0, 2.29, 0.01), hair, Vector3(1.04, 0.72, 0.95))
     _piece(self, "High tie", _sphere(0.12), Vector3(0, 2.43, 0.08), hair, Vector3(0.9, 1.0, 0.9))
     _piece(self, "Hair ribbon", _cylinder(0.105, 0.055), Vector3(0, 2.39, 0.08), accent)
-    long_hair = _piece(self, "Long tied hair", _capsule(0.09, 1.0), Vector3(0, 1.76, 0.23), hair, Vector3(1.0, 1.0, 1.15), Vector3(-0.18, 0, 0))
+    long_hair = _piece(self, "Long tied hair", _loft([
+        Vector4(0.025, 0.03, -0.51, 0.12),
+        Vector4(0.12, 0.055, -0.31, 0.10),
+        Vector4(0.15, 0.065, 0.08, 0.02),
+        Vector4(0.09, 0.065, 0.48, 0.0)
+    ], 14), Vector3(0, 1.91, 0.25), hair, Vector3.ONE, Vector3(-0.12, 0, 0))
     _piece(self, "Loose left lock", _capsule(0.055, 0.62), Vector3(-0.17, 1.98, 0.13), hair, Vector3(1.0, 1.0, 1.0), Vector3(0.12, 0, -0.13))
     _piece(self, "Loose right lock", _capsule(0.05, 0.55), Vector3(0.18, 1.98, 0.12), hair, Vector3(1.0, 1.0, 1.0), Vector3(-0.1, 0, 0.15))
     _piece(self, "Hair sideburn left", _capsule(0.035, 0.34), Vector3(-0.18, 2.04, -0.09), hair, Vector3.ONE, Vector3(0.05, 0, -0.12))
     _piece(self, "Hair sideburn right", _capsule(0.035, 0.34), Vector3(0.18, 2.04, -0.09), hair, Vector3.ONE, Vector3(0.05, 0, 0.12))
     _piece(self, "Gold hair pin", _box(Vector3(0.26, 0.025, 0.035)), Vector3(0, 2.36, -0.02), metal, Vector3.ONE, Vector3(0, 0, -0.06))
-    for strand in range(4):
-        var strand_x := -0.12 + strand * 0.08
-        _piece(self, "Back hair strand", _capsule(0.026, 0.78 - strand * 0.07), Vector3(strand_x, 1.61, 0.29 + absf(strand_x)), hair, Vector3.ONE, Vector3(-0.16, 0, strand_x * 0.45))
+    for strand in range(5):
+        var strand_x := -0.16 + strand * 0.08
+        _piece(self, "Back hair strand", _hair_ribbon(0.08, 0.75 - strand * 0.055), Vector3(strand_x, 2.08, 0.32 + absf(strand_x) * 0.3), hair, Vector3.ONE, Vector3(0.15, 0, strand_x * 0.3))
     _piece(self, "Wind-swept fringe", _capsule(0.055, 0.45), Vector3(-0.08, 2.24, -0.16), hair, Vector3(1.0, 1.0, 0.8), Vector3(0, 0, -0.42))
 
     # Fine embroidery and loose cloth tabs that catch the light.
@@ -160,7 +183,7 @@ func _ready() -> void:
         _piece(self, "Robe embroidery", _box(Vector3(0.1, 0.022, 0.012)), Vector3(-0.18, y, -0.3), trim, Vector3.ONE, Vector3(0, 0, -0.16))
         _piece(self, "Robe embroidery", _box(Vector3(0.1, 0.022, 0.012)), Vector3(0.18, y, -0.3), trim, Vector3.ONE, Vector3(0, 0, 0.16))
     for side in [-1.0, 1.0]:
-        var tail := _piece(self, "Trailing sash", _box(Vector3(0.16, 0.86, 0.045)), Vector3(side * 0.31, 0.85, 0.31), inner, Vector3.ONE, Vector3(0, 0, side * -0.12))
+        var tail := _piece(self, "Trailing sash", _hair_ribbon(0.11, 0.95), Vector3(side * 0.26, 1.33, 0.34), inner, Vector3.ONE, Vector3(0.08, 0, side * 0.08))
         cloak_tails.append(tail)
 
     # Gold hem studs, cord toggles and an embroidered back motif.
@@ -253,6 +276,53 @@ func _limb(part_name: String, pos: Vector3, radius: float, height: float, materi
     add_child(pivot)
     _piece(pivot, "Sleeve mesh", _capsule(radius, height), Vector3.ZERO, material)
     return pivot
+
+func _sleeve(part_name: String, pos: Vector3, material: Material) -> Node3D:
+    var pivot := Node3D.new()
+    pivot.name = part_name
+    pivot.position = pos
+    add_child(pivot)
+    _piece(pivot, "Tailored shoulder and upper sleeve", _loft([
+        Vector4(0.105, 0.11, -0.25, 0.0),
+        Vector4(0.125, 0.13, -0.08, 0.0),
+        Vector4(0.15, 0.14, 0.12, 0.0),
+        Vector4(0.11, 0.11, 0.22, 0.0)
+    ], 12), Vector3.ZERO, material)
+    return pivot
+
+func _loft(profiles: Array[Vector4], sides: int = 20, hem_wave: float = 0.0) -> ArrayMesh:
+    # Profile: horizontal radius, depth radius, height, depth offset.
+    var surface := SurfaceTool.new()
+    surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+    for row in range(profiles.size() - 1):
+        var lower := profiles[row]
+        var upper := profiles[row + 1]
+        for side in range(sides):
+            var a := TAU * float(side) / float(sides)
+            var b := TAU * float(side + 1) / float(sides)
+            var p0 := Vector3(sin(a) * lower.x, lower.z + (sin(a * 3.0) * hem_wave if row == 0 else 0.0), cos(a) * lower.y + lower.w)
+            var p1 := Vector3(sin(b) * lower.x, lower.z + (sin(b * 3.0) * hem_wave if row == 0 else 0.0), cos(b) * lower.y + lower.w)
+            var p2 := Vector3(sin(a) * upper.x, upper.z, cos(a) * upper.y + upper.w)
+            var p3 := Vector3(sin(b) * upper.x, upper.z, cos(b) * upper.y + upper.w)
+            for point in [p0, p1, p2, p1, p3, p2]:
+                surface.add_vertex(point)
+    surface.generate_normals()
+    return surface.commit()
+
+func _hair_ribbon(width: float, length: float) -> ArrayMesh:
+    var surface := SurfaceTool.new()
+    surface.begin(Mesh.PRIMITIVE_TRIANGLES)
+    for step in range(8):
+        var v0 := float(step) / 8.0
+        var v1 := float(step + 1) / 8.0
+        var left0 := Vector3(-width * (1.0 - v0 * 0.6), -length * v0, 0.025 * sin(v0 * PI))
+        var right0 := Vector3(width * (1.0 - v0 * 0.6), -length * v0, 0.025 * sin(v0 * PI))
+        var left1 := Vector3(-width * (1.0 - v1 * 0.6), -length * v1, 0.025 * sin(v1 * PI))
+        var right1 := Vector3(width * (1.0 - v1 * 0.6), -length * v1, 0.025 * sin(v1 * PI))
+        for point in [left0, left1, right0, right0, left1, right1]:
+            surface.add_vertex(point)
+    surface.generate_normals()
+    return surface.commit()
 
 func _capsule(radius: float, height: float) -> CapsuleMesh:
     var shape := CapsuleMesh.new()

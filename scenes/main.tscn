@@ -72,8 +72,8 @@ shape = SubResource("PlayerShape")
 [node name="CameraPivot" type="Node3D" parent="Player"]
 position = Vector3(0, 1.35, 0)
 [node name="Camera3D" type="Camera3D" parent="Player/CameraPivot"]
-position = Vector3(0, 2.0, 6.5)
-rotation_degrees = Vector3(-15, 0, 0)
+position = Vector3(0, 1.15, 5.6)
+rotation_degrees = Vector3(-10, 0, 0)
 current = true
 [node name="WorldStreamer" type="Node3D" parent="."]
 script = ExtResource("2")
@@ -129,7 +129,7 @@ offset_right = 620.0
 offset_bottom = 65.0
 mouse_filter = 2
 theme_override_font_sizes/font_size = 22
-text = "MURIM 0.14 · Personaje refinado"
+text = "MURIM 0.15 · Silueta y cámara renovadas"
 
 [node name="Marker0" type="MeshInstance3D" parent="."]
 position = Vector3(0, 0.03, -5)
