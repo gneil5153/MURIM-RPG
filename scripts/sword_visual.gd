@@ -9,14 +9,14 @@ var elapsed := 0.0
 var duration := 0.45
 
 func set_facing(direction: Vector2) -> void:
-    if direction.length_squared() > 0.01:
+    if not attacking and direction.length_squared() > 0.01:
         facing = direction.normalized()
-        if not attacking:
-            queue_redraw()
+        queue_redraw()
 
 func swing(style: int, direction: Vector2) -> void:
     attack_style = style
-    set_facing(direction)
+    if direction.length_squared() > 0.01:
+        facing = direction.normalized()
     elapsed = 0.0
     duration = 0.47 if style == 2 else 0.45
     attacking = true
