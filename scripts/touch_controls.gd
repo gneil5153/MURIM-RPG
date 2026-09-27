@@ -3,6 +3,10 @@ extends Control
 @export var player_path: NodePath
 var player: CharacterBody3D
 var move_touch := -1
+var camera_touch := -1
+var camera_last_position := Vector2.ZERO
+const CAMERA_DRAG_SENSITIVITY := 0.006
+const CAMERA_PITCH_SENSITIVITY := 0.0045
 var action_touches: Dictionary = {}
 var stick_vector := Vector2.ZERO
 var stick_sprinting := false
@@ -31,6 +35,10 @@ func _input(event: InputEvent) -> void:
             action_touches.erase(event.index)
             get_viewport().set_input_as_handled()
             return
+        if not event.pressed and event.index == camera_touch:
+            camera_touch = -1
+            get_viewport().set_input_as_handled()
+            return
         if event.pressed:
             for button_name in ["Attack", "Dodge"]:
                 var button: Button = get_node(button_name)
@@ -47,6 +55,10 @@ func _input(event: InputEvent) -> void:
             move_touch = event.index
             _move_stick(point)
             get_viewport().set_input_as_handled()
+        elif event.pressed and camera_touch == -1 and point.x >= size.x * 0.4:
+            camera_touch = event.index
+            camera_last_position = point
+            get_viewport().set_input_as_handled()
         elif not event.pressed and event.index == move_touch:
             release_stick()
             get_viewport().set_input_as_handled()
@@ -55,6 +67,14 @@ func _input(event: InputEvent) -> void:
     elif event is InputEventScreenDrag and event.index == move_touch:
         var point: Vector2 = get_global_transform_with_canvas().affine_inverse() * event.position
         _move_stick(point)
+        get_viewport().set_input_as_handled()
+    elif event is InputEventScreenDrag and event.index == camera_touch:
+        var point: Vector2 = get_global_transform_with_canvas().affine_inverse() * event.position
+        var drag_delta: Vector2 = point - camera_last_position
+        player.camera_pivot.rotation.y -= drag_delta.x * CAMERA_DRAG_SENSITIVITY
+        var camera: Camera3D = player.camera_pivot.get_node("Camera3D")
+        camera.rotation.x = clampf(camera.rotation.x - drag_delta.y * CAMERA_PITCH_SENSITIVITY, deg_to_rad(-55.0), deg_to_rad(10.0))
+        camera_last_position = point
         get_viewport().set_input_as_handled()
 
 func _move_stick(point: Vector2) -> void:
@@ -76,6 +96,7 @@ func release_stick() -> void:
 func _notification(what: int) -> void:
     if what == NOTIFICATION_APPLICATION_FOCUS_OUT:
         release_stick()
+        camera_touch = -1
         action_touches.clear()
 
 func _process(_delta: float) -> void:

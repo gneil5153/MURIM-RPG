@@ -121,5 +121,22 @@ func run() -> void:
         fail("Attack did not aim along joystick direction during multitouch")
         return
     touch(0, center, false)
-    print("PASS: attack damage/visual/cooldown/aim; idle dodge; dodge keeps released joystick direction; simultaneous joystick and action touches")
+    var camera = player.camera_pivot.get_node("Camera3D")
+    var initial_yaw: float = player.camera_pivot.rotation.y
+    var initial_pitch: float = camera.rotation.x
+    touch(0, center + Vector2(0, -35), true)
+    touch(4, Vector2(900, 300), true)
+    var camera_drag := InputEventScreenDrag.new()
+    camera_drag.index = 4
+    camera_drag.position = Vector2(950, 340)
+    root.push_input(camera_drag, true)
+    if absf(player.camera_pivot.rotation.y - initial_yaw) < 0.1 or absf(camera.rotation.x - initial_pitch) < 0.1:
+        fail("Right-side touch drag did not rotate camera yaw and pitch")
+        return
+    if controls.move_touch != 0 or player.touch_move.length() < 0.5:
+        fail("Camera drag interrupted movement joystick")
+        return
+    touch(4, Vector2(950, 340), false)
+    touch(0, center, false)
+    print("PASS: attack/dodge joystick aim, movement; simultaneous right-side camera orbit and pitch")
     quit(0)

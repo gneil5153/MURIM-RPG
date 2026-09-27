@@ -138,7 +138,7 @@ offset_right = 620.0
 offset_bottom = 65.0
 mouse_filter = 2
 theme_override_font_sizes/font_size = 22
-text = "MURIM 0.5 · Esquiva y ataca hacia la última dirección"
+text = "MURIM 0.6 · Joystick izq. · Arrastra der. para cámara"
 
 [node name="Marker0" type="MeshInstance3D" parent="."]
 position = Vector3(0, 0.03, -5)
@@ -168,3 +168,14 @@ text = "Qi: 100 / 100"
 [node name="TrainingDummy" type="StaticBody3D" parent="."]
 position = Vector3(0, 0, -2.2)
 script = ExtResource("4")
+
+[node name="CameraHint" type="Label" parent="HUD/TouchControls"]
+anchors_preset = 1
+offset_left = 720.0
+offset_top = 22.0
+offset_right = 1250.0
+offset_bottom = 58.0
+mouse_filter = 2
+theme_override_font_sizes/font_size = 20
+text = "ARRASTRA AQUÍ PARA MOVER CÁMARA"
+horizontal_alignment = 2
