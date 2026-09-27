@@ -16,6 +16,8 @@ var combo_step := 0
 var facing := Vector3.FORWARD
 var dodge_direction := Vector3.FORWARD
 var dodge_cooldown := 0.0
+var jump_buffer := 0.0
+@export var jump_velocity := 8.0
 var attack_visual: Node3D
 var attack_tween: Tween
 @onready var camera_pivot: Node3D = $CameraPivot
@@ -52,6 +54,11 @@ func _physics_process(delta):
         facing = dir
     if Input.is_action_just_pressed("dodge"): dodge()
     if Input.is_action_just_pressed("attack"): attack()
+    if Input.is_action_just_pressed("jump"): jump()
+    jump_buffer = maxf(0.0, jump_buffer - delta)
+    if jump_buffer > 0.0 and is_on_floor():
+        velocity.y = jump_velocity
+        jump_buffer = 0.0
     var running := (touch_sprinting or Input.is_action_pressed("sprint")) and qi > 1.0 and input.length() > 0.12
     var base_speed := sprint_speed if running else speed * input.length()
     if running:
@@ -103,10 +110,12 @@ func set_move_vector(v: Vector2) -> void:
         facing = (right * touch_move.x - forward * touch_move.y).normalized()
         $Mesh.rotation.y = atan2(-facing.x, -facing.z)
 
+func jump() -> void:
+    jump_buffer = 0.15
+
 func dodge() -> void:
     if qi >= 15.0 and dodge_cooldown <= 0.0:
         qi -= 15.0
         dodge_time = 0.22
         dodge_cooldown = 0.55
-        dodge_direction = facing
         dodge_direction = facing

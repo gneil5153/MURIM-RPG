@@ -138,5 +138,36 @@ func run() -> void:
         return
     touch(4, Vector2(950, 340), false)
     touch(0, center, false)
-    print("PASS: attack/dodge joystick aim, movement; simultaneous right-side camera orbit and pitch")
+    var initial_zoom: float = camera.position.z
+    touch(4, Vector2(800, 300), true)
+    touch(5, Vector2(1000, 300), true)
+    var pinch_drag := InputEventScreenDrag.new()
+    pinch_drag.index = 5
+    pinch_drag.position = Vector2(1050, 300)
+    root.push_input(pinch_drag, true)
+    if camera.position.z >= initial_zoom - 0.3:
+        fail("Pinch out did not zoom camera in")
+        return
+    touch(4, Vector2(800, 300), false)
+    touch(5, Vector2(1050, 300), false)
+    player.position = Vector3(0, 0.05, 0)
+    player.velocity = Vector3.ZERO
+    for i in range(3):
+        await physics_frame
+    if not player.is_on_floor():
+        fail("Player did not settle on floor before jump test")
+        return
+    var jump_point: Vector2 = controls.get_global_transform_with_canvas() * (controls.get_node("Jump").position + controls.get_node("Jump").size / 2.0)
+    var jump_start: float = player.position.y
+    touch(6, jump_point, true)
+    if player.jump_buffer <= 0.0:
+        fail("Jump button touch was not received")
+        return
+    touch(6, jump_point, false)
+    for i in range(12):
+        await physics_frame
+    if player.position.y <= jump_start + 0.5:
+        fail("Jump input did not lift player")
+        return
+    print("PASS: orbit and pitch, pinch zoom, jump button and airborne movement actions")
     quit(0)

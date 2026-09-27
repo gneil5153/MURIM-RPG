@@ -3,7 +3,7 @@ extends Control
 @export var player_path: NodePath
 var player: CharacterBody3D
 var move_touch := -1
-var camera_touch := -1
+var camera_touches: Dictionary = {}
 var camera_last_position := Vector2.ZERO
 const CAMERA_DRAG_SENSITIVITY := 0.006
 const CAMERA_PITCH_SENSITIVITY := 0.0045
@@ -35,28 +35,30 @@ func _input(event: InputEvent) -> void:
             action_touches.erase(event.index)
             get_viewport().set_input_as_handled()
             return
-        if not event.pressed and event.index == camera_touch:
-            camera_touch = -1
+        if not event.pressed and camera_touches.has(event.index):
+            camera_touches.erase(event.index)
             get_viewport().set_input_as_handled()
             return
         if event.pressed:
-            for button_name in ["Attack", "Dodge"]:
+            for button_name in ["Attack", "Dodge", "Jump"]:
                 var button: Button = get_node(button_name)
                 if Rect2(button.position, button.size).has_point(point):
                     if not action_touches.has(event.index):
                         action_touches[event.index] = button_name
                         if button_name == "Attack":
                             player.attack()
-                        else:
+                        elif button_name == "Dodge":
                             player.dodge()
+                        else:
+                            player.jump()
                     get_viewport().set_input_as_handled()
                     return
         if event.pressed and move_touch == -1 and point.distance_to(stick_center()) <= STICK_RADIUS + 28.0:
             move_touch = event.index
             _move_stick(point)
             get_viewport().set_input_as_handled()
-        elif event.pressed and camera_touch == -1 and point.x >= size.x * 0.4:
-            camera_touch = event.index
+        elif event.pressed and point.x >= size.x * 0.4:
+            camera_touches[event.index] = point
             camera_last_position = point
             get_viewport().set_input_as_handled()
         elif not event.pressed and event.index == move_touch:
@@ -68,13 +70,22 @@ func _input(event: InputEvent) -> void:
         var point: Vector2 = get_global_transform_with_canvas().affine_inverse() * event.position
         _move_stick(point)
         get_viewport().set_input_as_handled()
-    elif event is InputEventScreenDrag and event.index == camera_touch:
+    elif event is InputEventScreenDrag and camera_touches.has(event.index):
         var point: Vector2 = get_global_transform_with_canvas().affine_inverse() * event.position
-        var drag_delta: Vector2 = point - camera_last_position
-        player.camera_pivot.rotation.y -= drag_delta.x * CAMERA_DRAG_SENSITIVITY
+        var previous_point: Vector2 = camera_touches[event.index]
+        var drag_delta: Vector2 = point - previous_point
         var camera: Camera3D = player.camera_pivot.get_node("Camera3D")
-        camera.rotation.x = clampf(camera.rotation.x - drag_delta.y * CAMERA_PITCH_SENSITIVITY, deg_to_rad(-55.0), deg_to_rad(10.0))
-        camera_last_position = point
+        if camera_touches.size() == 1:
+            player.camera_pivot.rotation.y -= drag_delta.x * CAMERA_DRAG_SENSITIVITY
+            camera.rotation.x = clampf(camera.rotation.x - drag_delta.y * CAMERA_PITCH_SENSITIVITY, deg_to_rad(-55.0), deg_to_rad(10.0))
+        else:
+            var positions: Array = camera_touches.values()
+            var previous_distance: float = positions[0].distance_to(positions[1])
+            camera_touches[event.index] = point
+            positions = camera_touches.values()
+            var current_distance: float = positions[0].distance_to(positions[1])
+            camera.position.z = clampf(camera.position.z - (current_distance - previous_distance) * 0.012, 3.2, 10.5)
+        camera_touches[event.index] = point
         get_viewport().set_input_as_handled()
 
 func _move_stick(point: Vector2) -> void:
@@ -96,12 +107,13 @@ func release_stick() -> void:
 func _notification(what: int) -> void:
     if what == NOTIFICATION_APPLICATION_FOCUS_OUT:
         release_stick()
-        camera_touch = -1
+        camera_touches.clear()
         action_touches.clear()
 
 func _process(_delta: float) -> void:
     $Attack.modulate = Color(1.0, 0.75, 0.3) if player.attack_cooldown > 0.0 else Color.WHITE
     $Dodge.modulate = Color(0.4, 0.8, 1.0) if player.dodge_cooldown > 0.0 else Color.WHITE
+    $Jump.modulate = Color(0.55, 1.0, 0.65) if player.jump_buffer > 0.0 else Color.WHITE
     $Status.text = "Qi: %d / 100" % int(player.qi)
 
 func _on_attack_pressed() -> void:
@@ -109,3 +121,6 @@ func _on_attack_pressed() -> void:
 
 func _on_dodge_pressed() -> void:
     player.dodge()
+
+func _on_jump_pressed() -> void:
+    player.jump()

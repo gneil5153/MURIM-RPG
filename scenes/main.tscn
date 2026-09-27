@@ -130,6 +130,7 @@ text = "ESQUIVA"
 
 [connection signal="pressed" from="HUD/TouchControls/Attack" to="HUD/TouchControls" method="_on_attack_pressed"]
 [connection signal="pressed" from="HUD/TouchControls/Dodge" to="HUD/TouchControls" method="_on_dodge_pressed"]
+[connection signal="pressed" from="HUD/TouchControls/Jump" to="HUD/TouchControls" method="_on_jump_pressed"]
 
 [node name="Version" type="Label" parent="HUD/TouchControls"]
 offset_left = 26.0
@@ -138,7 +139,7 @@ offset_right = 620.0
 offset_bottom = 65.0
 mouse_filter = 2
 theme_override_font_sizes/font_size = 22
-text = "MURIM 0.6 · Joystick izq. · Arrastra der. para cámara"
+text = "MURIM 0.7 · Cámara: arrastra · Pellizca para zoom"
 
 [node name="Marker0" type="MeshInstance3D" parent="."]
 position = Vector3(0, 0.03, -5)
@@ -155,6 +156,20 @@ mesh = SubResource("MarkerMesh")
 [node name="Marker3" type="MeshInstance3D" parent="."]
 position = Vector3(0, 0.03, -20)
 mesh = SubResource("MarkerMesh")
+
+[node name="Jump" type="Button" parent="HUD/TouchControls"]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -158.0
+offset_top = -298.0
+offset_right = -28.0
+offset_bottom = -168.0
+grow_horizontal = 0
+grow_vertical = 0
+text = "SALTO"
 
 [node name="Status" type="Label" parent="HUD/TouchControls"]
 offset_left = 26.0
@@ -176,6 +191,6 @@ offset_top = 22.0
 offset_right = 1250.0
 offset_bottom = 58.0
 mouse_filter = 2
-theme_override_font_sizes/font_size = 20
-text = "ARRASTRA AQUÍ PARA MOVER CÁMARA"
+theme_override_font_sizes/font_size = 18
+text = "ARRASTRA PARA GIRAR · PELLIZCA PARA ZOOM"
 horizontal_alignment = 2
