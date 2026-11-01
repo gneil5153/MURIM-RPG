@@ -1,0 +1,98 @@
+name: Valerius - compilar APK Android
+
+on:
+  push:
+    branches:
+      - valerius-acto-i
+    paths:
+      - "game/**"
+      - "android.json"
+      - ".github/workflows/valerius-apk.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  android-apk:
+    name: Construir APK de prueba
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    env:
+      RENPY_VERSION: "8.5.3"
+    steps:
+      - name: Descargar codigo de la rama
+        uses: actions/checkout@v4
+
+      - name: Java 21 (requerido por RAPT)
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Instalar paquetes de Android
+        run: |
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager "platform-tools" "platforms;android-36"
+
+      - name: Instalar dependencias de Ren'Py
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y xvfb libgl1 libfontconfig1 libfreetype6 libasound2t64
+          python3 -m pip install --break-system-packages "Jinja2>=3.0" "requests>=2.25" "Pillow>=9"
+
+      - name: Descargar Ren'Py SDK y RAPT
+        run: |
+          set -euo pipefail
+          cd "$RUNNER_TEMP"
+          curl --fail --location --retry 3 --output renpy-sdk.tar.bz2 \
+            "https://www.renpy.org/dl/${RENPY_VERSION}/renpy-${RENPY_VERSION}-sdk.tar.bz2"
+          tar -xjf renpy-sdk.tar.bz2
+          curl --fail --location --retry 3 --output renpy-rapt.zip \
+            "https://www.renpy.org/dl/${RENPY_VERSION}/renpy-${RENPY_VERSION}-rapt.zip"
+          unzip -q renpy-rapt.zip -d "$RUNNER_TEMP/renpy-${RENPY_VERSION}"
+          test -f "$RUNNER_TEMP/renpy-${RENPY_VERSION}/rapt/android.py"
+          echo "RENPY_HOME=$RUNNER_TEMP/renpy-${RENPY_VERSION}" >> "$GITHUB_ENV"
+
+      - name: Configurar RAPT con Android SDK
+        run: |
+          set -euo pipefail
+          printf '%s\n' "$ANDROID_HOME" > "$RENPY_HOME/rapt/sdk.txt"
+          export RAPT_NO_TERMS=1
+          python3 "$RENPY_HOME/rapt/android.py" installsdk
+
+      - name: Crear claves temporales para APK de prueba
+        run: |
+          set -euo pipefail
+          keytool -genkeypair -noprompt \
+            -keystore "$GITHUB_WORKSPACE/android.keystore" \
+            -alias android -keyalg RSA -keysize 2048 -validity 365 \
+            -storepass android -keypass android \
+            -dname "CN=Valerius Dev, O=GitHub Actions, C=US"
+          cp "$GITHUB_WORKSPACE/android.keystore" "$GITHUB_WORKSPACE/bundle.keystore"
+          # Estas claves son efimeras y nunca se publican en el repositorio.
+          # Para versiones actualizables o distribucion publica, usar secretos.
+
+      - name: Comprobar errores en guion Ren'Py
+        run: |
+          xvfb-run -a "$RENPY_HOME/renpy.sh" "$GITHUB_WORKSPACE" lint --error-code
+
+      - name: Construir APK universal
+        run: |
+          set -euo pipefail
+          mkdir -p "$GITHUB_WORKSPACE/dist"
+          xvfb-run -a "$RENPY_HOME/renpy.sh" launcher android_build "$GITHUB_WORKSPACE" \
+            --destination "$GITHUB_WORKSPACE/dist"
+          find "$GITHUB_WORKSPACE/dist" -type f -name '*.apk' -print
+          test -n "$(find "$GITHUB_WORKSPACE/dist" -type f -name '*.apk' -print -quit)"
+
+      - name: Publicar APK como artefacto descargable
+        uses: actions/upload-artifact@v4
+        with:
+          name: Valerius-Acto-I-APK
+          path: dist/**/*.apk
+          if-no-files-found: error
+          retention-days: 14
