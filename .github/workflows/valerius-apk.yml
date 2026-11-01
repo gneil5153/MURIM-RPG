@@ -94,7 +94,8 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p "$GITHUB_WORKSPACE/dist"
-          xvfb-run -a "$RENPY_HOME/renpy.sh" launcher android_build "$GITHUB_WORKSPACE" \
+          cd "$RENPY_HOME"
+          xvfb-run -a ./renpy.sh launcher android_build "$GITHUB_WORKSPACE" \
             --destination "$GITHUB_WORKSPACE/dist"
           find "$GITHUB_WORKSPACE/dist" -type f -name '*.apk' -print
           test -n "$(find "$GITHUB_WORKSPACE/dist" -type f -name '*.apk' -print -quit)"
