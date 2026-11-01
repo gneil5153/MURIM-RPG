@@ -56,7 +56,11 @@ jobs:
           cd "$RUNNER_TEMP"
           curl --fail --location --retry 3 --output renpy-sdk.tar.bz2 \
             "https://www.renpy.org/dl/${RENPY_VERSION}/renpy-${RENPY_VERSION}-sdk.tar.bz2"
-          tar -xjf renpy-sdk.tar.bz2
+          mkdir -p "$RUNNER_TEMP/renpy-${RENPY_VERSION}"
+          # El tar trae una carpeta raiz (renpy-<version>-sdk).
+          tar -xjf renpy-sdk.tar.bz2 -C "$RUNNER_TEMP/renpy-${RENPY_VERSION}" --strip-components=1
+          test -f "$RUNNER_TEMP/renpy-${RENPY_VERSION}/renpy.sh"
+          test -d "$RUNNER_TEMP/renpy-${RENPY_VERSION}/renpy"
           curl --fail --location --retry 3 --output renpy-rapt.zip \
             "https://www.renpy.org/dl/${RENPY_VERSION}/renpy-${RENPY_VERSION}-rapt.zip"
           unzip -q renpy-rapt.zip -d "$RUNNER_TEMP/renpy-${RENPY_VERSION}"
