@@ -30,13 +30,19 @@ jobs:
           distribution: temurin
           java-version: "21"
 
-      - name: Android SDK
-        uses: android-actions/setup-android@v3
-
-      - name: Instalar paquetes de Android
+      - name: Usar el SDK de Android preinstalado en GitHub
         run: |
-          yes | sdkmanager --licenses > /dev/null || true
-          sdkmanager "platform-tools" "platforms;android-36"
+          set -euo pipefail
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          test -d "$ANDROID_HOME"
+          # RAPT usa cmdline-tools/latest; GitHub puede traer solo 16.0.
+          if [ ! -e "$ANDROID_HOME/cmdline-tools/latest" ]; then
+            TOOLS_DIR="$(find "$ANDROID_HOME/cmdline-tools" -mindepth 1 -maxdepth 1 -type d -name '[0-9]*' | sort -V | tail -n 1)"
+            test -n "$TOOLS_DIR"
+            sudo ln -s "$TOOLS_DIR" "$ANDROID_HOME/cmdline-tools/latest"
+          fi
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platform-tools" "platforms;android-36"
+
 
       - name: Instalar dependencias de Ren'Py
         run: |
