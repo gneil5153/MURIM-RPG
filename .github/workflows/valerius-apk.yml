@@ -67,16 +67,12 @@ jobs:
           test -f "$RUNNER_TEMP/renpy-${RENPY_VERSION}/rapt/android.py"
           echo "RENPY_HOME=$RUNNER_TEMP/renpy-${RENPY_VERSION}" >> "$GITHUB_ENV"
 
-      - name: Configurar RAPT con Android SDK
+      - name: Conectar RAPT con SDK Android existente
         run: |
           set -euo pipefail
           printf '%s\n' "$ANDROID_HOME" > "$RENPY_HOME/rapt/sdk.txt"
-          export RAPT_NO_TERMS=1
-          cd "$RENPY_HOME/rapt"
-          export PYTHONPATH="$RENPY_HOME:$RENPY_HOME/launcher/game"
-          # Ejecutar con Python incluido en Ren'Py, que trae sus extensiones nativas.
-          test -x "$RENPY_HOME/lib/py3-linux-x86_64/python"
-          "$RENPY_HOME/lib/py3-linux-x86_64/python" android.py installsdk
+          test -x "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+          test -d "$ANDROID_HOME/platforms/android-36"
 
       - name: Crear claves temporales para APK de prueba
         run: |
