@@ -68,7 +68,8 @@ jobs:
           set -euo pipefail
           printf '%s\n' "$ANDROID_HOME" > "$RENPY_HOME/rapt/sdk.txt"
           export RAPT_NO_TERMS=1
-          python3 "$RENPY_HOME/rapt/android.py" installsdk
+          cd "$RENPY_HOME/rapt"
+          python3 android.py installsdk
 
       - name: Crear claves temporales para APK de prueba
         run: |
