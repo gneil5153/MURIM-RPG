@@ -69,6 +69,7 @@ jobs:
           printf '%s\n' "$ANDROID_HOME" > "$RENPY_HOME/rapt/sdk.txt"
           export RAPT_NO_TERMS=1
           cd "$RENPY_HOME/rapt"
+          export PYTHONPATH="$RENPY_HOME:$RENPY_HOME/launcher/game"
           python3 android.py installsdk
 
       - name: Crear claves temporales para APK de prueba
