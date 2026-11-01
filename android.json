@@ -1,0 +1,21 @@
+{
+  "name": "Valerius - Acto I",
+  "icon_name": "Valerius",
+  "package": "com.valerius.actouno",
+  "version": "1.0",
+  "numeric_version": 1,
+  "orientation": "portrait",
+  "heap_size": "3",
+  "layout": null,
+  "permissions": [],
+  "store": "none",
+  "expansion": false,
+  "source": false,
+  "include_pil": false,
+  "include_sqlite": false,
+  "update_always": true,
+  "update_icons": true,
+  "update_keystores": true,
+  "google_play_key": null,
+  "google_play_salt": null
+}

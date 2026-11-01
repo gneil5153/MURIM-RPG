@@ -1,14 +1,22 @@
-# Murim: Sendero del Qi
+# Valerius — Acto I: El que escucha al bosque
 
-A small Android action RPG prototype built in Godot 4.4. The current build uses top-down 2D pixel art with shaded sprites and soft ground shadows for a semi-3D impression. Legacy 3D prototype files are excluded from the Android package.
+Proyecto narrativo en **Ren'Py**, formato vertical (720 × 1280), preparado para Android.
 
-## Controls
-- Drag the left virtual stick to walk; push it toward the edge to run.
-- Tap **Ataque** repeatedly to chain three forms: a quick cut, a rising cut, then an all-around Qi spin. The attacks use filled, layered energy crescents with a bright blade core and drifting sparks; the combo resets if you pause for about one second.
-- Tap **Especial** (or press E on desktop) for a full-body radiant Qi wave with warm mist, curved energy ribbons and seven soft petal flares. It keeps a radius three times the character's height, costs 30 Qi and has a five-second cooldown.
-- Tap **Esquiva** to dodge along the stick direction, or backward if the stick is neutral.
-- Tap **Salto** for a short hop.
-- Drag the right side to pan the camera; pinch to zoom.
-- On desktop, use WASD or arrow keys, Space to dodge, J to jump, and the left mouse button to attack.
+## Contenido
+- Acto I completo: Regio Silvae, Valerius Vindicta y el misterio de Marcus.
+- Decisiones morales con reputación entre el pueblo y la orden.
+- Códice, guardado y menú táctil.
+- Fondos y personajes provisionales en pixel art.
 
-The hero sprite sheet contains 20 animations in four facing directions, drawn in a richer shaded pixel-art style while gameplay remains 2D.
+## Estado
+**Código fuente, no APK.** Todavía no se ha compilado ni probado en un SDK de Ren'Py real. No hay música ni voces.
+
+## Cómo probarlo o generar APK
+1. Descarga esta rama desde GitHub y descomprime el ZIP.
+2. Abre Ren'Py SDK en Linux, Windows o macOS y selecciona la carpeta del proyecto.
+3. Ejecuta **Launch Project** y verifica su funcionamiento.
+4. En Ren'Py: **Android → Install SDK & Create Keys**, luego **Configure** (orientación Portrait) y **Build Package → Universal APK**.
+
+Consulta [README.txt](README.txt) para instrucciones y advertencias detalladas.
+
+**Nota:** Esta es una rama independiente del juego MURIM-RPG; el contenido de `main` no se ha modificado.

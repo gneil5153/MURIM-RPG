@@ -1,0 +1,18 @@
+# Ren'Py
+game/cache/
+game/saves/
+*.rpyc
+*.rpymc
+*.log
+traceback.txt
+# Android signing material — never commit signing keys
+*.keystore
+*.jks
+*.p12
+*.pfx
+*.pem
+# IDE / local build
+dist/
+build/
+.DS_Store
+__pycache__/
